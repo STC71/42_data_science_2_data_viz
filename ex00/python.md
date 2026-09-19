@@ -1,5 +1,9 @@
 # 🐍 Guía Python – EX00 American apple Pie
 
+<p align="center">
+  <img src="./imgs/python_banner.jpg" alt="Piscine Data Science – Module 0 – Guía Python" width="100%">
+</p>
+
 [← README EX00](./README.md) · [← Module 2](../README.md)
 
 ---

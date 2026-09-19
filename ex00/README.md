@@ -1,7 +1,7 @@
 # 🥧 Ejercicio 00 – American apple Pie
 
 <p align="center">
-  <em>Module 2 – Data Viz · pie chart de event_type</em>
+  <img src="../imgs/banner_20.jpg" alt="Piscine Data Science – Module 0 – pie chart de event_type" width="100%">
 </p>
 
 [← README Module 2](../README.md)
