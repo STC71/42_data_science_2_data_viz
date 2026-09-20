@@ -1,7 +1,7 @@
 # 🐍 Guía Python – EX02 My beautiful mustache
 
 <p align="center">
-  <em>Module 2 – Data Viz · estadísticas de precio + box plots</em>
+  <img src="./imgs/python_banner.jpg" alt="Piscine Data Science – Module 2 – Data Viz · estadísticas de precio + box plots (boîte à moustaches) width="100%">
 </p>
 
 [← README EX02](./README.md) · [← mustache.py](./mustache.py) · [← Module 2](../README.md) · [EX01 guía](../ex01/python.md)
@@ -201,6 +201,11 @@ No son intercambiables: un usuario puede comprar 10 ítems baratos; su cesta es 
 
 <a id="flujo"></a>
 ## 🔄 Flujo completo del script
+
+<br>
+<p align="center">
+  <img src="./imgs/mustache_diagrama_flujo.png" alt="Piscine Data Science – Module 2 – Data Viz · estadísticas de precio + box plots (boîte à moustaches) width="100%">
+</p>
 
 ```text
 1. ensure_dependencies()
