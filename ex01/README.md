@@ -53,11 +53,29 @@ Literalmente (subject):
 | [`python.md`](./python.md) | Guía didáctica |
 | [`start.sh`](./start.sh) | Menú opcional |
 
+<p align="center">
+  <img src="./imgs/chart_python.png" alt="Piscine Data Science – Module 2 – Data Viz · tres gráficos de purchase (oct 2022 – feb 2023)width="100%">
+</p>
+
 Al ejecutar se generan (opcionales, útiles en defensa):
 
 - `chart_customers_daily.png`
+
+<p align="center">
+  <img src="./imgs/puchases_per_day.png" alt="Piscine Data Science – Module 2 – Data Viz · tres gráficos de purchase (oct 2022 – feb 2023)width="100%">
+</p>
+
 - `chart_sales_monthly.png`
+
+<p align="center">
+  <img src="./imgs/total_sales_by_months.png" alt="Piscine Data Science – Module 2 – Data Viz · tres gráficos de purchase (oct 2022 – feb 2023)width="100%">
+</p>
+
 - `chart_avg_spend_daily.png`
+
+<p align="center">
+  <img src="./imgs/average_spend.png" alt="Piscine Data Science – Module 2 – Data Viz · tres gráficos de purchase (oct 2022 – feb 2023)width="100%">
+</p>
 
 [↑ Volver al índice](#indice)
 

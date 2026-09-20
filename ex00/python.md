@@ -212,6 +212,11 @@ La agregación se hace **en SQL** (`GROUP BY`): PostgreSQL cuenta millones de fi
 <a id="flujo"></a>
 ## 🔄 Flujo del script (paso a paso)
 
+<br>
+<p align="center">
+  <img src="./imgs/pie_diagrama_flujo.png" alt="Piscine Data Science – Module 0 – diagrama pie chart de event_type" width="100%">
+</p>
+
 ```text
 1. ensure_dependencies()     → psycopg2, dotenv, matplotlib si faltan
 2. find_env_file() + load    → POSTGRES_* desde Module 0
