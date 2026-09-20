@@ -1,5 +1,9 @@
 # 🐍 Guía Python – EX01 initial data exploration
 
+<p align="center">
+  <img src="./imgs/python_banner.jpg" alt="Piscine Data Science – Module 2 – Data Viz · ex01 · Python Banner width="100%">
+</p>
+
 [← README EX01](./README.md) · [← Module 2](../README.md)
 
 ---

@@ -397,7 +397,7 @@ def main() -> None:
     print()
 
     plot_charts(daily_customers, monthly_sales, daily_avg, SCRIPT_DIR)
-    print("Proceso terminado.")
+    print("Proceso terminado ✓")
 
 
 if __name__ == "__main__":

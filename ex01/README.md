@@ -1,7 +1,7 @@
 # 📈 Ejercicio 01 – initial data exploration
 
 <p align="center">
-  <em>Module 2 – Data Viz · tres gráficos de purchase (oct 2022 – feb 2023)</em>
+  <img src="../imgs/banner_21.jpg" alt="Piscine Data Science – Module 2 – Data Viz · tres gráficos de purchase (oct 2022 – feb 2023)width="100%">
 </p>
 
 [← README Module 2](../README.md) · [← EX00](../ex00/README.md)
