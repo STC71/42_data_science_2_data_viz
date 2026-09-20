@@ -79,6 +79,9 @@ PNG al ejecutar: `mustache_item_price.png`, `mustache_basket.png`.
 SELECT price FROM customers
 WHERE event_type = 'purchase' AND price IS NOT NULL;
 ```
+<p align="center">
+  <img src="./imgs/box_plot_price.png" alt="Piscine Data Science – Module 2 – Data Viz · estadísticas de precio + box plots (boîte à moustaches) width="100%">
+</p>
 
 Sobre ese vector: **describe** + box plot horizontal.
 
@@ -90,6 +93,9 @@ FROM customers
 WHERE event_type = 'purchase' AND price IS NOT NULL
 GROUP BY user_id;
 ```
+<p align="center">
+  <img src="./imgs/box_plot_average.png" alt="Piscine Data Science – Module 2 – Data Viz · estadísticas de precio + box plots (boîte à moustaches) width="100%">
+</p>
 
 Mismo **describe** + segundo box plot.
 
@@ -108,6 +114,10 @@ python3 mustache.py
 MPLBACKEND=Agg python3 mustache.py
 ./start.sh
 ```
+
+<p align="center">
+  <img src="./imgs/mustache_python.png" alt="Piscine Data Science – Module 2 – Data Viz · estadísticas de precio + box plots (boîte à moustaches) width="100%">
+</p>
 
 [↑ Volver al índice](#indice)
 
