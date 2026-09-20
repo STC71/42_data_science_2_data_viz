@@ -72,6 +72,18 @@ docker exec -it postgres_piscineds \
   psql -U "$(whoami)" -d piscineds -c \
   "SELECT event_type, COUNT(*) FROM customers GROUP BY 1 ORDER BY 2 DESC;"
 ```
+| ¿Qué hace el SQL?  |  |
+| ----------------- | - |
+| <b>Fragmento</b> | <b>Significado</b> |
+| FROM customers | Tabla del warehouse (Module 1): todos los eventos apilados. |
+| event_type | Tipo de acción: view, cart, purchase, remove_from_cart, etc. |
+| COUNT(*) | Cuántas filas hay en cada grupo. |
+| GROUP BY 1 | Agrupa por la 1ª columna del SELECT → event_type. (Equivalente a GROUP BY event_type.) |
+| ORDER BY 2 DESC | Ordena por la 2ª columna (COUNT(*)) de mayor a menor. |
+
+<p align="center">
+  <img src="./imgs/psql_00.png" alt="Piscine Data Science – Module 2 – psql_00.png" width="100%">
+</p>
 
 [↑ Volver al índice](#indice)
 
@@ -103,13 +115,24 @@ python3 pie.py
 chmod +x pie.py && ./pie.py
 ```
 
-Se abre una ventana con el pie chart y se guarda `pie_chart.png` si el backend de matplotlib lo permite.
+Se guarda `pie_chart.png` si el backend de matplotlib lo permite; `plt.show()` mostrará ventana.
+
+<p align="center">
+  <img src="./imgs/pie_py_00.png" alt="Piscine Data Science – Module 2 – pie_py_00.png" width="100%">
+</p>
+
+<p align="center">
+  <img src="./imgs/matplotlib_00.png" alt="Piscine Data Science – Module 2 – matplotlib" width="100%">
+</p>
 
 En un entorno sin pantalla (solo terminal), puedes usar:
 
 ```bash
 MPLBACKEND=Agg python3 pie.py
 ```
+<p align="center">
+  <img src="./imgs/pie_py_01.png" alt="Piscine Data Science – Module 2 – pie_py_01.png" width="100%">
+</p>
 
 (el PNG se generará igual; `plt.show()` no mostrará ventana).
 
