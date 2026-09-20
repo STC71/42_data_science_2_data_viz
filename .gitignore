@@ -1,1 +1,7 @@
 *.pdf
+
+.venv/
+
+__pycache__/
+
+ex00/pie_chart.png
