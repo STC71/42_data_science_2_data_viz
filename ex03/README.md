@@ -75,6 +75,13 @@ PNG al ejecutar: `building_frequency.png`, `building_monetary.png`.
 | **Frequency** | Nº de compras del cliente (1…29, **30+**) | Nº de clientes | ¿Cuántos compran 1 vez, 2 veces…? |
 | **Monetary** | Tramo de gasto total (0–50, …, **200+** ₳) | Nº de clientes | ¿Cuántos gastan poco / mucho? |
 
+<p align="center">
+  <img src="./imgs/customers_by_purchase_frecuency.png" alt="Piscine Data Science – Module 2 – Data Viz · frequency & monetary (barras “edificios”) width="100%">
+</p>
+<p align="center">
+  <img src="./imgs/customers_by_total_spend.png" alt="Piscine Data Science – Module 2 – Data Viz · frequency & monetary (barras “edificios”) width="100%">
+</p>
+
 La agregación es **por usuario** (no por fila suelta): primero `GROUP BY user_id`, luego se cuenta cuántos usuarios caen en cada bin.
 
 [↑ Volver al índice](#indice)
@@ -113,6 +120,10 @@ python3 Building.py
 MPLBACKEND=Agg python3 Building.py
 ./start.sh
 ```
+
+<p align="center">
+  <img src="./imgs/building_py.png" alt="Piscine Data Science – Module 2 – Data Viz · frequency & monetary (barras “edificios”) width="100%">
+</p>
 
 [↑ Volver al índice](#indice)
 
