@@ -4,10 +4,6 @@
   <img src="../imgs/banner_22.jpg" alt="Piscine Data Science – Module 2 – Data Viz · estadísticas de precio + box plots (boîte à moustaches) width="100%">
 </p>
 
-<p align="center">
-  <em>Module 2 – Data Viz · estadísticas de precio + box plots (boîte à moustaches)</em>
-</p>
-
 [← README Module 2](../README.md) · [← EX01](../ex01/README.md)
 
 ---
