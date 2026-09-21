@@ -19,10 +19,10 @@ Fuente: Data Warehouse Module 1 → customers (event_type = purchase).
 
 from __future__ import annotations
 
-import os
-import sys
-import warnings
-from pathlib import Path
+import os                   # Para leer variables de entorno y rutas de archivos
+import sys                  # Para sys.exit() y sys.path
+import warnings             # Para filtrar advertencias de matplotlib
+from pathlib import Path    # Para manejar rutas de archivos de manera portátil
 
 warnings.filterwarnings("ignore", message=r"Unable to import Axes3D.*")
 warnings.filterwarnings("ignore", message=r"FigureCanvasAgg is non-interactive.*")
@@ -31,6 +31,10 @@ warnings.filterwarnings(
     category=UserWarning,
     module=r"matplotlib(\..*)?",
 )
+# Se filtran los warnings de matplotlib que no afectan a la funcionalidad principal 
+# del script, especialmente en entornos sin interfaz gráfica, 3D, o cuando se usan 
+# backends no interactivos como Agg. La idea es mantener la salida limpia y centrarse 
+# en los resultados relevantes del análisis de datos.
 
 # ---------------------------------------------------------------------------
 # Dependencias

@@ -1,5 +1,9 @@
 # 🐍 Guía Python – EX03 Highest Building
 
+<p align="center">
+  <img src="./imgs/python_banner.jpg" alt="Piscine Data Science – Module 2 – Data Viz · frequency & monetary (barras “edificios”) width="100%">
+</p>
+
 [← README EX03](./README.md) · [← Building.py](./Building.py) · [← Module 2](../README.md)
 
 ---
@@ -125,6 +129,9 @@ Cada barra = un “edificio” cuya altura es el número de clientes en ese bin.
 
 <a id="flujo"></a>
 ## 🔄 Flujo de `Building.py`
+
+<p align="center">
+  <img src="./imgs/python_diagrama_flujo.jpg" alt="Piscine Data Science – Module 2 – Data Viz · frequency & monetary (barras “edificios”) width="100%">
 
 ```text
 .env → connect
@@ -288,4 +295,4 @@ WHERE event_type = 'purchase';
 
 ---
 
-*Module 2 – EX03 – Guía Python · sternero – 42 Málaga – 2026*
+*Module 2 – EX03 – Guía Python · sternero – 42 Málaga – Octubre 2026*

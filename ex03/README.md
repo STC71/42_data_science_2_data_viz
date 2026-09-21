@@ -1,7 +1,7 @@
 # 🏗️ Ejercicio 03 – Highest Building (Edificio más alto)
 
 <p align="center">
-  <em>Module 2 – Data Viz · frequency & monetary (barras “edificios”)</em>
+  <img src="../imgs/banner_23.jpg" alt="Piscine Data Science – Module 2 – Data Viz · frequency & monetary (barras “edificios”) width="100%">
 </p>
 
 [← README Module 2](../README.md) · [← EX02](../ex02/README.md)
@@ -121,6 +121,10 @@ MPLBACKEND=Agg python3 Building.py
 <a id="guia"></a>
 ## 📘 Guía Python
 
+<p align="center">
+  <img src="./imgs/python_diagrama_flujo.jpg" alt="Piscine Data Science – Module 2 – Data Viz · frequency & monetary (barras “edificios”) width="100%">
+</p>
+
 **[python.md](./python.md)** — frequency/monetary, bins, defensa.
 
 [↑ Volver al índice](#indice)
@@ -150,4 +154,4 @@ MPLBACKEND=Agg python3 Building.py
 
 ---
 
-*Module 2 – EX03 – sternero – 42 Málaga – 2026*
+*Module 2 – EX03 – sternero – 42 Málaga – Octubre 2026*
