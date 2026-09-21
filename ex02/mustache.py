@@ -19,18 +19,26 @@ Fuente: Data Warehouse Module 1 → tabla customers.
 
 from __future__ import annotations
 
-import os
-import sys
-import warnings
-from pathlib import Path
+import os                   # Para usar os.environ.get() y Path.home()
+import sys                  # Para sys.executable y sys.path
+import warnings             # Para filtrar warnings de matplotlib
+from pathlib import Path    # Para Path(__file__).resolve().parent
 
 warnings.filterwarnings("ignore", message=r"Unable to import Axes3D.*")
+# Matplotlib 3.5+ emite un warning al importar Axes3D (aunque no se use) si no hay DISPLAY.
+# Se debe a que Axes3D intenta importar un backend interactivo (TkAgg) para 3D, que no está disponible 
+# y que tampoco usamos en este script. No está fallando nada, pero el warning es molesto. Se ignora.
 warnings.filterwarnings("ignore", message=r"FigureCanvasAgg is non-interactive.*")
+# Igual que antes pero para FigureCanvasAgg (backend no interactivo). Ya que no afecta a la 
+# funcionalidad del script, pero si que puede resultar confuso para el usuario, se ignora.
 warnings.filterwarnings(
     "ignore",
     category=UserWarning,
     module=r"matplotlib(\..*)?",
 )
+# Ignorar warnings de matplotlib (UserWarning) que no afectan a la funcionalidad del script,
+# pero que pueden resultar confusos para el usuario. Se filtra por módulo para no afectar a otros módulos 
+# que puedan usar matplotlib y que sí necesiten ver sus warnings.
 
 # ---------------------------------------------------------------------------
 # Dependencias (mismo criterio EX00/EX01)
