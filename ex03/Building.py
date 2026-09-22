@@ -386,33 +386,93 @@ def plot_monetary(counts: list[int], out_path: Path, *, show: bool = False) -> N
     )
 
 
-def main() -> None:
-    print("EX03 – Highest Building")
-    print("Fuente: customers · purchase · frequency (bins×10) + monetary (bins×50 ₳)")
+# Consultas independientes (no reutilizan el CASE de los histogramas)
+SQL_TOTAL_BUYERS = """
+SELECT COUNT(DISTINCT user_id)::bigint
+FROM customers
+WHERE event_type = 'purchase';
+"""
+
+SQL_FREQ_30PLUS = """
+SELECT COUNT(*)::bigint
+FROM (
+    SELECT user_id
+    FROM customers
+    WHERE event_type = 'purchase'
+    GROUP BY user_id
+    HAVING COUNT(*) >= 30
+) t;
+"""
+
+SQL_MON_200PLUS = """
+SELECT COUNT(*)::bigint
+FROM (
+    SELECT user_id
+    FROM customers
+    WHERE event_type = 'purchase' AND price IS NOT NULL
+    GROUP BY user_id
+    HAVING SUM(price) >= 200
+) t;
+"""
+
+SQL_USERS_WITH_PRICE = """
+SELECT COUNT(DISTINCT user_id)::bigint
+FROM customers
+WHERE event_type = 'purchase' AND price IS NOT NULL;
+"""
+
+
+def run_self_check(conn, freq_counts: list[int], mon_counts: list[int]) -> bool:
+    """
+    Contrasta los arrays del gráfico con SQL independiente.
+    Devuelve True si todo cuadra.
+    """
     print()
+    print("=" * 52)
+    print("SELF-CHECK EX03 (SQL independiente vs bins del gráfico)")
+    print("=" * 52)
 
-    try:
-        conn = psycopg2.connect(**DB_CONFIG)
-    except psycopg2.Error as exc:
-        print("Error de conexión:", exc, file=sys.stderr)
-        sys.exit(1)
+    total_buyers = int(fetch_all(conn, SQL_TOTAL_BUYERS)[0][0])
+    n_30 = int(fetch_all(conn, SQL_FREQ_30PLUS)[0][0])
+    n_200 = int(fetch_all(conn, SQL_MON_200PLUS)[0][0])
+    users_price = int(fetch_all(conn, SQL_USERS_WITH_PRICE)[0][0])
 
-    try:
-        freq_rows = fetch_all(conn, SQL_FREQUENCY)
-        mon_rows = fetch_all(conn, SQL_MONETARY)
-    except psycopg2.Error as exc:
-        print("Error SQL:", exc, file=sys.stderr)
-        sys.exit(1)
-    finally:
-        conn.close()
+    sum_f = sum(freq_counts)
+    sum_m = sum(mon_counts)
+    last_f = freq_counts[3] if len(freq_counts) > 3 else -1
+    last_m = mon_counts[4] if len(mon_counts) > 4 else -1
 
-    freq_counts = counts_by_bin(freq_rows, 4)
-    mon_counts = counts_by_bin(mon_rows, 5)
+    checks = [
+        ("Suma frequency == total_buyers", sum_f == total_buyers, sum_f, total_buyers),
+        ("Frequency 30+ == HAVING COUNT(*)>=30", last_f == n_30, last_f, n_30),
+        ("Suma monetary == users con price", sum_m == users_price, sum_m, users_price),
+        ("Monetary 200+ == HAVING SUM>=200", last_m == n_200, last_m, n_200),
+    ]
 
-    if sum(freq_counts) == 0:
-        print("Sin clientes con purchase.", file=sys.stderr)
-        sys.exit(1)
+    ok_all = True
+    for label, ok, a, b in checks:
+        mark = "✓" if ok else "✗"
+        print(f"  {mark} {label}")
+        print(f"      gráfico/bins = {a:,}  |  SQL ref = {b:,}")
+        if not ok:
+            ok_all = False
 
+    print("-" * 52)
+    if ok_all:
+        print("✓ SELF-CHECK OK — tablas y gráficos coherentes con la BD")
+    else:
+        print("✗ SELF-CHECK FALLÓ — revisa SQL o bins")
+    print("=" * 52)
+    return ok_all
+
+
+def load_counts(conn):
+    freq_rows = fetch_all(conn, SQL_FREQUENCY)
+    mon_rows = fetch_all(conn, SQL_MONETARY)
+    return counts_by_bin(freq_rows, 4), counts_by_bin(mon_rows, 5)
+
+
+def print_tables(freq_counts: list[int], mon_counts: list[int]) -> None:
     print("Frequency – clientes por tramo de nº de compras:")
     print("-" * 44)
     for lab, n in zip(FREQ_BIN_LABELS, freq_counts):
@@ -428,15 +488,56 @@ def main() -> None:
     print("-" * 44)
     print()
 
-    imgs = SCRIPT_DIR / "imgs"
-    imgs.mkdir(parents=True, exist_ok=True)
 
-    # Capturas del README (mismos nombres que en el repo) + copia de trabajo
-    plot_frequency(freq_counts, imgs / "customers_by_purchase_frecuency.png", show=True)
-    plot_frequency(freq_counts, SCRIPT_DIR / "building_frequency.png", show=False)
-    plot_monetary(mon_counts, imgs / "customers_by_total_spend.png", show=True)
-    plot_monetary(mon_counts, SCRIPT_DIR / "building_monetary.png", show=False)
-    print("Proceso terminado.")
+def main(argv: list[str] | None = None) -> None:
+    """
+    Uso:
+      python3 Building.py              # tablas + gráficos
+      python3 Building.py --self-check # tablas + gráficos + verificación SQL
+      python3 Building.py --check-only # solo verificación (sin gráficos)
+    """
+    argv = list(sys.argv[1:] if argv is None else argv)
+    self_check = "--self-check" in argv or "--check" in argv
+    check_only = "--check-only" in argv
+
+    print("EX03 – Highest Building")
+    print("Fuente: customers · purchase · frequency (bins×10) + monetary (bins×50 ₳)")
+    print()
+
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+    except psycopg2.Error as exc:
+        print("Error de conexión:", exc, file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        freq_counts, mon_counts = load_counts(conn)
+        if sum(freq_counts) == 0:
+            print("Sin clientes con purchase.", file=sys.stderr)
+            sys.exit(1)
+
+        print_tables(freq_counts, mon_counts)
+
+        passed = True
+        if self_check or check_only:
+            passed = run_self_check(conn, freq_counts, mon_counts)
+
+        if not check_only:
+            imgs = SCRIPT_DIR / "imgs"
+            imgs.mkdir(parents=True, exist_ok=True)
+            plot_frequency(freq_counts, imgs / "customers_by_purchase_frecuency.png", show=True)
+            plot_frequency(freq_counts, SCRIPT_DIR / "building_frequency.png", show=False)
+            plot_monetary(mon_counts, imgs / "customers_by_total_spend.png", show=True)
+            plot_monetary(mon_counts, SCRIPT_DIR / "building_monetary.png", show=False)
+            print("Proceso terminado.")
+    except psycopg2.Error as exc:
+        print("Error SQL:", exc, file=sys.stderr)
+        sys.exit(1)
+    finally:
+        conn.close()
+
+    if (self_check or check_only) and not passed:
+        sys.exit(2)
 
 
 if __name__ == "__main__":

@@ -303,6 +303,51 @@ show_docs()
     fi
 }
 
+
+run_verify_sql()
+{
+    section "🔎  verify_ex03.sql (comprobaciones SQL)"
+    if ! container_up; then err "Sin contenedor"; return 1; fi
+    local sqlf="$SCRIPT_DIR/verify_ex03.sql"
+    if [[ ! -f "$sqlf" ]]; then
+        err "Falta $sqlf"
+        info "Debería estar junto a Building.py en ex03/"
+        return 1
+    fi
+    docker exec -i "$CONTAINER_NAME" \
+        psql -U "$(db_user)" -d "$(db_name)" < "$sqlf"
+}
+
+run_self_check()
+{
+    section "✅  Building.py --self-check (tablas = SQL independiente)"
+    if [[ ! -f "$BUILDING_PY" ]]; then err "Falta $BUILDING_PY"; return 1; fi
+    chmod +x "$BUILDING_PY" 2>/dev/null || true
+    info "Ejecutando: MPLBACKEND=Agg python3 Building.py --self-check"
+    echo
+    ( cd "$SCRIPT_DIR" && MPLBACKEND=Agg python3 "$BUILDING_PY" --self-check )
+    local rc=$?
+    echo
+    if [[ $rc -eq 0 ]]; then
+        ok "Self-check OK (código 0) — bins del gráfico = SQL de referencia"
+    elif [[ $rc -eq 2 ]]; then
+        err "Self-check FALLÓ (código 2) — desajuste bins vs SQL"
+    else
+        err "Building.py terminó con código $rc"
+    fi
+    return $rc
+}
+
+run_check_only()
+{
+    section "⚡  Solo verificación (sin gráficos)"
+    if [[ ! -f "$BUILDING_PY" ]]; then err "Falta $BUILDING_PY"; return 1; fi
+    ( cd "$SCRIPT_DIR" && MPLBACKEND=Agg python3 "$BUILDING_PY" --check-only )
+    local rc=$?
+    [[ $rc -eq 0 ]] && ok "check-only OK" || err "check-only falló ($rc)"
+    return $rc
+}
+
 show_menu()
 {
     echo
@@ -313,10 +358,13 @@ show_menu()
     echo -e "  ${BOLD}3)${RESET}  SQL: compradores distintos"
     echo -e "  ${BOLD}4)${RESET}  SQL: frequency (preview bins)"
     echo -e "  ${BOLD}5)${RESET}  SQL: monetary (tramos de gasto)"
-    echo -e "  ${BOLD}6)${RESET}  Ejecutar Building.py"
-    echo -e "  ${BOLD}7)${RESET}  Abrir psql"
-    echo -e "  ${BOLD}8)${RESET}  Verificar Building.*"
-    echo -e "  ${BOLD}9)${RESET}  Documentación (README / python.md)"
+    echo -e "  ${BOLD}6)${RESET}  Ejecutar Building.py (gráficos)"
+    echo -e "  ${BOLD}7)${RESET}  verify_ex03.sql (informe SQL completo)"
+    echo -e "  ${BOLD}8)${RESET}  Self-check: Building.py vs SQL (recomendado)"
+    echo -e "  ${BOLD}9)${RESET}  Check-only (verificación rápida, sin PNG)"
+    echo -e "  ${BOLD}a)${RESET}  Abrir psql"
+    echo -e "  ${BOLD}b)${RESET}  Verificar entrega Building.*"
+    echo -e "  ${BOLD}d)${RESET}  Documentación (README / python.md)"
     echo -e "  ${BOLD}p)${RESET}  chmod +x Building.py / start.sh"
     echo -e "  ${RED}${BOLD}q)${RESET}  Salir"
     echo
@@ -336,9 +384,12 @@ menu_loop()
             4) sql_frequency_preview; pause ;;
             5) sql_monetary_preview; pause ;;
             6) run_building; pause ;;
-            7) open_psql; pause ;;
-            8) check_delivery; pause ;;
-            9) show_docs; pause ;;
+            7) run_verify_sql; pause ;;
+            8) run_self_check; pause ;;
+            9) run_check_only; pause ;;
+            a|A) open_psql; pause ;;
+            b|B) check_delivery; pause ;;
+            d|D) show_docs; pause ;;
             p|P)
                 chmod +x "$SCRIPT_DIR/start.sh" "$BUILDING_PY" 2>/dev/null
                 ok "chmod +x aplicado"
