@@ -218,4 +218,4 @@ WHERE event_type = 'purchase';
 
 ---
 
-*Module 2 – EX03 – sternero – 42 Málaga – 2026*
+*Module 2 – EX03 – sternero – 42 Málaga – Octubre 2026*

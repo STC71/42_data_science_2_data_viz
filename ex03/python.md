@@ -246,4 +246,4 @@ Comprueba: `TOTAL` frequency = `TOTAL` monetary = `COUNT(DISTINCT user_id)` con 
 
 ---
 
-*Module 2 – EX03 – Guía Python · sternero – 42 Málaga – 2026*
+*Module 2 – EX03 – Guía Python · sternero – 42 Málaga – Octubre 2026*
