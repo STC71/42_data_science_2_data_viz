@@ -5,24 +5,30 @@ EX03 – Building.py
 Module 2 – Data Viz – Piscine Data Science
 
 ================================================================================
-SUBJECT – Highest Building
+SUBJECT (literal, en.subject.pdf – Exercise 03 : Highest Building)
 ================================================================================
-  • Analizar la frecuencia de compra de los clientes y el valor monetario.
-  • Gráficos tipo “edificios” (barras):
-      1) Nº de clientes según cuántas veces han comprado (frequency)
-      2) Nº de clientes según el gasto total (monetary)
+  • made a bar chart with the number of orders according to the frequency
+  • made a bar chart the Altairian Dollars spent on the site by customers
   • Turn-in directory : ex03/
   • Files to turn in  : Building.*
 
-Fuente: Data Warehouse Module 1 → customers (event_type = purchase).
+Expected look (PDF figure):
+  LEFT  – frequency: histogram-like bars, X ≈ 0 / 10 / 20 / 30
+          (NOT one bar per integer 1,2,3,…,30)
+  RIGHT – monetary: bars by spend ranges, X ≈ 0 / 50 / 100 / 150 / 200
+
+Nota: el PDF se hizo sin febrero; con data_2023_feb los conteos cambian,
+pero la FORMA de los bins debe ser la del subject.
+
+Fuente: Data Warehouse Module 1 → public.customers (event_type = 'purchase').
 """
 
 from __future__ import annotations
 
-import os                   # Para leer variables de entorno y rutas de archivos
-import sys                  # Para sys.exit() y sys.path
-import warnings             # Para filtrar advertencias de matplotlib
-from pathlib import Path    # Para manejar rutas de archivos de manera portátil
+import os
+import sys
+import warnings
+from pathlib import Path
 
 warnings.filterwarnings("ignore", message=r"Unable to import Axes3D.*")
 warnings.filterwarnings("ignore", message=r"FigureCanvasAgg is non-interactive.*")
@@ -31,13 +37,9 @@ warnings.filterwarnings(
     category=UserWarning,
     module=r"matplotlib(\..*)?",
 )
-# Se filtran los warnings de matplotlib que no afectan a la funcionalidad principal 
-# del script, especialmente en entornos sin interfaz gráfica, 3D, o cuando se usan 
-# backends no interactivos como Agg. La idea es mantener la salida limpia y centrarse 
-# en los resultados relevantes del análisis de datos.
 
 # ---------------------------------------------------------------------------
-# Dependencias
+# Dependencias (mismo criterio que EX00–EX02)
 # ---------------------------------------------------------------------------
 
 
@@ -70,7 +72,7 @@ def _purge_numpy_matplotlib() -> None:
 
 
 def _matplotlib_works() -> bool:
-    """No fijar Agg aquí."""
+    """No fijar Agg aquí (no bloquear plt.show() después)."""
     try:
         import numpy as np
         from numpy.linalg import eigvals
@@ -161,7 +163,7 @@ import psycopg2
 from dotenv import load_dotenv
 
 # ---------------------------------------------------------------------------
-# Rutas / .env
+# Rutas / .env (Module 0)
 # ---------------------------------------------------------------------------
 SCRIPT_DIR = Path(__file__).resolve().parent
 MODULE2_DIR = SCRIPT_DIR.parent
@@ -214,33 +216,54 @@ DB_CONFIG = {
     "password": os.environ.get("POSTGRES_PASSWORD", "mysecretpassword"),
 }
 
-# Frecuencia: cuántos clientes tienen exactamente n compras.
-# Las compras >= FREQ_CAP se agrupan en la última barra (estilo PDF "30+").
-FREQ_CAP = 30
-
-SQL_FREQUENCY = f"""
+# ===========================================================================
+# FREQUENCY – bins de ancho 10 (como el PDF)
+#
+#   [1, 10)  → bin 0   (clientes con 1…9 compras)
+#   [10, 20) → bin 1
+#   [20, 30) → bin 2
+#   [30, ∞)  → bin 3   (30 o más)
+#
+# Antes se dibujaba una barra por cada entero 1,2,…,29 + "30+".
+# Eso NO coincide con la figura del subject (4 edificios anchos).
+# ===========================================================================
+SQL_FREQUENCY = """
 WITH per_user AS (
     SELECT user_id, COUNT(*)::int AS freq
     FROM customers
     WHERE event_type = 'purchase'
     GROUP BY user_id
 ),
-capped AS (
+binned AS (
     SELECT
         CASE
-            WHEN freq >= {FREQ_CAP} THEN {FREQ_CAP}
-            ELSE freq
-        END AS freq_bin
+            WHEN freq < 10 THEN 0
+            WHEN freq < 20 THEN 1
+            WHEN freq < 30 THEN 2
+            ELSE 3
+        END AS bin_id
     FROM per_user
 )
-SELECT freq_bin, COUNT(*)::bigint AS n_customers
-FROM capped
-GROUP BY freq_bin
-ORDER BY freq_bin;
+SELECT bin_id, COUNT(*)::bigint AS n_customers
+FROM binned
+GROUP BY bin_id
+ORDER BY bin_id;
 """
 
-# Monetario: gasto total por usuario, agrupado en tramos (edificios).
-# Bins alineados con rangos típicos del subject (0–50, 50–100, …, 200+).
+# Centros de barra y ancho para imitar el eje continuo del PDF (0, 10, 20, 30)
+FREQ_BAR_CENTERS = [5.0, 15.0, 25.0, 35.0]
+FREQ_BAR_WIDTH = 9.0
+FREQ_BIN_LABELS = ("0–10", "10–20", "20–30", "30+")
+
+# ===========================================================================
+# MONETARY – tramos de 50 ₳ (como el PDF)
+#
+#   [0, 50)    → bin 0
+#   [50, 100)  → bin 1
+#   [100, 150) → bin 2
+#   [150, 200) → bin 3
+#   [200, ∞)   → bin 4
+# ===========================================================================
 SQL_MONETARY = """
 WITH per_user AS (
     SELECT user_id, SUM(price) AS total_spent
@@ -252,10 +275,10 @@ WITH per_user AS (
 binned AS (
     SELECT
         CASE
-            WHEN total_spent >= 0  AND total_spent < 50  THEN 0
-            WHEN total_spent >= 50 AND total_spent < 100 THEN 1
-            WHEN total_spent >= 100 AND total_spent < 150 THEN 2
-            WHEN total_spent >= 150 AND total_spent < 200 THEN 3
+            WHEN total_spent < 50  THEN 0
+            WHEN total_spent < 100 THEN 1
+            WHEN total_spent < 150 THEN 2
+            WHEN total_spent < 200 THEN 3
             ELSE 4
         END AS bin_id
     FROM per_user
@@ -266,13 +289,9 @@ GROUP BY bin_id
 ORDER BY bin_id;
 """
 
-MONETARY_LABELS = {
-    0: "0–50",
-    1: "50–100",
-    2: "100–150",
-    3: "150–200",
-    4: "200+",
-}
+MON_BAR_CENTERS = [25.0, 75.0, 125.0, 175.0, 225.0]
+MON_BAR_WIDTH = 48.0
+MON_BIN_LABELS = ("0–50", "50–100", "100–150", "150–200", "200+")
 
 
 def fetch_all(conn, sql: str):
@@ -281,23 +300,47 @@ def fetch_all(conn, sql: str):
         return cur.fetchall()
 
 
-def plot_frequency(rows, out_path: Path) -> None:
-    """Barras: eje X = nº de compras (1…29, 30+); Y = nº de clientes."""
-    bins = [int(r[0]) for r in rows]
-    counts = [int(r[1]) for r in rows]
-    labels = [str(b) if b < FREQ_CAP else f"{FREQ_CAP}+" for b in bins]
+def counts_by_bin(rows, n_bins: int) -> list[int]:
+    """
+    Convierte filas (bin_id, n) en lista de longitud n_bins (0 si falta un bin).
+    """
+    out = [0] * n_bins
+    for bin_id, n in rows:
+        i = int(bin_id)
+        if 0 <= i < n_bins:
+            out[i] = int(n)
+    return out
 
-    fig, ax = plt.subplots(figsize=(11, 4.8), layout="constrained")
-    ax.bar(labels, counts, color="#4C78A8", edgecolor="white", width=0.85)
-    ax.set_xlabel("frequency")
-    ax.set_ylabel("customers")
-    ax.set_title("Number of customers by purchase frequency")
+
+def _save_bar_chart(
+    centers: list[float],
+    counts: list[int],
+    *,
+    width: float,
+    xlim: tuple[float, float],
+    xticks: list[int],
+    xlabel: str,
+    ylabel: str,
+    title: str,
+    out_path: Path,
+    show: bool,
+) -> None:
+    fig, ax = plt.subplots(figsize=(7.5, 4.8), layout="constrained")
+    ax.bar(
+        centers,
+        counts,
+        width=width,
+        color="#A0C4E8",
+        edgecolor="white",
+        align="center",
+    )
+    ax.set_xlim(*xlim)
+    ax.set_xticks(xticks)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
     ax.grid(True, axis="y", alpha=0.35)
-    # Evitar solapamiento de etiquetas si hay muchas barras
-    if len(labels) > 20:
-        for i, tick in enumerate(ax.get_xticklabels()):
-            if i % 2 != 0:
-                tick.set_visible(False)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(
         out_path,
         dpi=150,
@@ -306,37 +349,46 @@ def plot_frequency(rows, out_path: Path) -> None:
         facecolor="white",
     )
     print(f"→ Guardado: {out_path}")
-    plt.show()
+    if show:
+        plt.show()
     plt.close(fig)
 
 
-def plot_monetary(rows, out_path: Path) -> None:
-    """Barras: eje X = tramo de gasto total (₳); Y = nº de clientes."""
-    ids = [int(r[0]) for r in rows]
-    counts = [int(r[1]) for r in rows]
-    labels = [MONETARY_LABELS.get(i, str(i)) for i in ids]
-
-    fig, ax = plt.subplots(figsize=(8, 4.8), layout="constrained")
-    ax.bar(labels, counts, color="#54A24B", edgecolor="white", width=0.7)
-    ax.set_xlabel("monetary value (₳)")
-    ax.set_ylabel("customers")
-    ax.set_title("Number of customers by total spend (basket)")
-    ax.grid(True, axis="y", alpha=0.35)
-    fig.savefig(
-        out_path,
-        dpi=150,
-        bbox_inches="tight",
-        pad_inches=0.15,
-        facecolor="white",
+def plot_frequency(counts: list[int], out_path: Path, *, show: bool = False) -> None:
+    """Frequency: bins de ancho 10 (PDF)."""
+    _save_bar_chart(
+        FREQ_BAR_CENTERS,
+        counts,
+        width=FREQ_BAR_WIDTH,
+        xlim=(0, 40),
+        xticks=[0, 10, 20, 30],
+        xlabel="frequency",
+        ylabel="customers",
+        title="Number of customers by purchase frequency",
+        out_path=out_path,
+        show=show,
     )
-    print(f"→ Guardado: {out_path}")
-    plt.show()
-    plt.close(fig)
+
+
+def plot_monetary(counts: list[int], out_path: Path, *, show: bool = False) -> None:
+    """Monetary: bins de 50 ₳ (PDF)."""
+    _save_bar_chart(
+        MON_BAR_CENTERS,
+        counts,
+        width=MON_BAR_WIDTH,
+        xlim=(0, 250),
+        xticks=[0, 50, 100, 150, 200],
+        xlabel="monetary value in ₳",
+        ylabel="customers",
+        title="Number of customers by total spend",
+        out_path=out_path,
+        show=show,
+    )
 
 
 def main() -> None:
     print("EX03 – Highest Building")
-    print("Fuente: customers · purchase · frequency + monetary")
+    print("Fuente: customers · purchase · frequency (bins×10) + monetary (bins×50 ₳)")
     print()
 
     try:
@@ -354,26 +406,36 @@ def main() -> None:
     finally:
         conn.close()
 
-    if not freq_rows:
+    freq_counts = counts_by_bin(freq_rows, 4)
+    mon_counts = counts_by_bin(mon_rows, 5)
+
+    if sum(freq_counts) == 0:
         print("Sin clientes con purchase.", file=sys.stderr)
         sys.exit(1)
 
-    print("Frequency (compras por usuario → nº de clientes):")
-    print("-" * 40)
-    for b, n in freq_rows:
-        label = str(b) if int(b) < FREQ_CAP else f"{FREQ_CAP}+"
-        print(f"  freq {label:>4s}  →  {int(n):>10,} customers")
-    print("-" * 40)
+    print("Frequency – clientes por tramo de nº de compras:")
+    print("-" * 44)
+    for lab, n in zip(FREQ_BIN_LABELS, freq_counts):
+        print(f"  {lab:>8s}  →  {n:>10,} customers")
+    print(f"  {'TOTAL':>8s}  →  {sum(freq_counts):>10,} customers")
+    print("-" * 44)
     print()
-    print("Monetary (gasto total por usuario → nº de clientes):")
-    print("-" * 40)
-    for b, n in mon_rows:
-        print(f"  {MONETARY_LABELS.get(int(b), b):>8s}  →  {int(n):>10,} customers")
-    print("-" * 40)
+    print("Monetary – clientes por tramo de gasto total (₳):")
+    print("-" * 44)
+    for lab, n in zip(MON_BIN_LABELS, mon_counts):
+        print(f"  {lab:>8s}  →  {n:>10,} customers")
+    print(f"  {'TOTAL':>8s}  →  {sum(mon_counts):>10,} customers")
+    print("-" * 44)
     print()
 
-    plot_frequency(freq_rows, SCRIPT_DIR / "building_frequency.png")
-    plot_monetary(mon_rows, SCRIPT_DIR / "building_monetary.png")
+    imgs = SCRIPT_DIR / "imgs"
+    imgs.mkdir(parents=True, exist_ok=True)
+
+    # Capturas del README (mismos nombres que en el repo) + copia de trabajo
+    plot_frequency(freq_counts, imgs / "customers_by_purchase_frecuency.png", show=True)
+    plot_frequency(freq_counts, SCRIPT_DIR / "building_frequency.png", show=False)
+    plot_monetary(mon_counts, imgs / "customers_by_total_spend.png", show=True)
+    plot_monetary(mon_counts, SCRIPT_DIR / "building_monetary.png", show=False)
     print("Proceso terminado.")
 
 

@@ -1,7 +1,7 @@
 # 🐍 Guía Python – EX03 Highest Building
 
 <p align="center">
-  <img src="./imgs/python_banner.jpg" alt="Piscine Data Science – Module 2 – Data Viz · frequency & monetary (barras “edificios”) width="100%">
+  <img src="./imgs/python_banner.jpg" alt="Piscine Data Science – Module 2 – Guía Python EX03" width="100%">
 </p>
 
 [← README EX03](./README.md) · [← Building.py](./Building.py) · [← Module 2](../README.md)
@@ -13,101 +13,32 @@
 
 ### Parte A – Conceptos
 1. [¿Para quién?](#para-quien)
-2. [Frequency vs Monetary](#fm)
-3. [Agrupar por usuario, no por fila](#userid)
-4. [Bins y la barra “30+” / “200+”](#bins)
-5. [Barras como “edificios”](#bars)
+2. [Qué pide el subject](#subject)
+3. [La figura del PDF](#pdf)
+4. [Frequency vs Monetary](#fm)
+5. [Error a evitar: una barra por entero](#error)
 
 ### Parte B – El script
-6. [Qué pide el subject](#subject)
-7. [Flujo de `Building.py`](#flujo)
-8. [SQL de frequency](#sql-f)
-9. [SQL de monetary](#sql-m)
+6. [Diagrama de flujo](#flujo)
+7. [Bins de frequency (ancho 10)](#bins-f)
+8. [Bins de monetary (ancho 50 ₳)](#bins-m)
+9. [SQL](#sql)
 10. [Cómo se dibujan las barras](#plot)
 11. [Ejecutar y comprobar](#ejecutar)
 12. [Defensa](#defensa)
 13. [Errores frecuentes](#errores)
-14. [Mini ejercicios](#ejercicios)
-15. [Glosario](#glosario)
-16. [Puente EX02 → EX03 → EX04](#puente)
+14. [Glosario](#glosario)
 
 ---
 
 <a id="para-quien"></a>
 ## 👋 ¿Para quién?
 
-Para entender por qué el ejercicio se llama **Highest Building**: las barras parecen un skyline — edificios más altos donde hay más clientes.
+Para entender **Highest Building**: dos histogramas de clientes (frequency y monetary) con la **misma forma de bins** que el PDF del subject.
 
-Al final, en defensa:
+En defensa:
 
-> “Cuento cuántas compras tiene cada user_id (frequency) y cuánto gasta en total (monetary). Agrupo en bins y dibujo dos histogramas de clientes.”
-
-[↑ Volver al índice](#indice)
-
----
-
-<a id="fm"></a>
-## 📊 Frequency vs Monetary
-
-| Dimensión | Pregunta | Cálculo por usuario |
-|-----------|----------|---------------------|
-| **Frequency** | ¿Cuántas veces ha comprado? | `COUNT(*)` de filas `purchase` |
-| **Monetary** | ¿Cuánto ha gastado en total? | `SUM(price)` de esas filas |
-
-Son dos caras del modelo **RFM** (Recency, Frequency, Monetary). Aquí aún no usamos Recency; EX04/EX05 lo retomarán para clustering.
-
-[↑ Volver al índice](#indice)
-
----
-
-<a id="userid"></a>
-## 👤 Agrupar por usuario, no por fila
-
-Mal (cuenta eventos, no clientes):
-
-```sql
-SELECT COUNT(*) FROM customers WHERE event_type = 'purchase';
-```
-
-Bien (un edificio por “altura” de hábito de compra):
-
-```sql
-SELECT user_id, COUNT(*) AS freq
-FROM customers
-WHERE event_type = 'purchase'
-GROUP BY user_id;
-```
-
-Luego: “¿cuántos *usuarios* tienen freq = 1, freq = 2, …?”
-
-[↑ Volver al índice](#indice)
-
----
-
-<a id="bins"></a>
-## 📦 Bins y la barra “30+” / “200+”
-
-Sin techo, el eje X de frequency puede ir hasta cientos de compras (cola larga) y el gráfico se vuelve ilegible.
-
-- **Frequency:** valores ≥ 30 se agrupan en la última barra **`30+`**.  
-- **Monetary:** tramos `0–50`, `50–100`, `100–150`, `150–200`, **`200+`** (₳).
-
-Es la misma idea que un histograma con el último intervalo abierto.
-
-[↑ Volver al índice](#indice)
-
----
-
-<a id="bars"></a>
-## 🏗️ Barras como “edificios”
-
-```python
-ax.bar(labels, counts, color="#4C78A8", edgecolor="white")
-ax.set_xlabel("frequency")
-ax.set_ylabel("customers")
-```
-
-Cada barra = un “edificio” cuya altura es el número de clientes en ese bin.
+> “Por cada user_id cuento compras y sumo precios. Agrupo en tramos de 10 órdenes y de 50 ₳, y dibujo el skyline de clientes.”
 
 [↑ Volver al índice](#indice)
 
@@ -116,126 +47,173 @@ Cada barra = un “edificio” cuya altura es el número de clientes en ese bin.
 <a id="subject"></a>
 ## 🎯 Qué pide el subject
 
-| Ítem | Práctica |
-|------|----------|
-| Analizar frequency | Compras por `user_id` + histograma de clientes |
-| Analizar monetary | `SUM(price)` por usuario + histograma por tramos |
-| Entrega | `ex03/Building.*` |
-| Fuente | Warehouse (`customers`) |
+```text
+• bar chart: number of orders according to the frequency
+• bar chart: Altairian Dollars spent on the site by customers
+Turn-in: Building.*
+```
+
+[↑ Volver al índice](#indice)
+
+---
+
+<a id="pdf"></a>
+## 🖼️ La figura del PDF
+
+<p align="center">
+  <img src="./imgs/customers_by_purchase_frecuency.png" alt="Frequency – bins de 10" width="100%">
+</p>
+
+<p align="center">
+  <img src="./imgs/customers_by_total_spend.png" alt="Monetary – bins de 50 A" width="100%">
+</p>
+
+| Lado | Eje X | Forma esperada |
+|------|-------|----------------|
+| Frequency | 0 · 10 · 20 · 30 | ~4 barras **anchas** |
+| Monetary | 0 · 50 · 100 · 150 · 200 | ~5 barras por tramos de 50 ₳ |
+
+Los **números** del PDF no son ley (faltaba febrero). La **estructura de bins** sí.
+
+[↑ Volver al índice](#indice)
+
+---
+
+<a id="fm"></a>
+## 📊 Frequency vs Monetary
+
+| | Frequency | Monetary |
+|--|-----------|----------|
+| Por usuario | `COUNT(*)` purchase | `SUM(price)` purchase |
+| Bins | Paso **10** | Paso **50 ₳** |
+| Eje Y | customers | customers |
+
+[↑ Volver al índice](#indice)
+
+---
+
+<a id="error"></a>
+## ⚠️ Error a evitar
+
+**Incorrecto:** una barra por cada 1, 2, 3, …, 29 + `30+` → peine de ~30 barras.
+
+**Correcto (PDF):** cuatro tramos 0–10 / 10–20 / 20–30 / 30+.
 
 [↑ Volver al índice](#indice)
 
 ---
 
 <a id="flujo"></a>
-## 🔄 Flujo de `Building.py`
+## 🔄 Diagrama de flujo
 
 <p align="center">
-  <img src="./imgs/python_diagrama_flujo.jpg" alt="Piscine Data Science – Module 2 – Data Viz · frequency & monetary (barras “edificios”) width="100%">
+  <img src="./imgs/python_diagrama_flujo.jpg" alt="Diagrama de flujo Building.py" width="100%">
+</p>
 
 ```text
-.env → connect
-  → SQL frequency (CTE + cap 30+)
-  → SQL monetary (CTE + bins de gasto)
-  → imprimir tablas resumen
-  → bar chart frequency → PNG
-  → bar chart monetary  → PNG
+.env → connect → SQL frequency (bins×10) → SQL monetary (bins×50)
+     → tablas resumen → PNG frequency + PNG monetary → show
+```
+
+<p align="center">
+  <img src="./imgs/building_py.png" alt="Ejecución Building.py" width="100%">
+</p>
+
+[↑ Volver al índice](#indice)
+
+---
+
+<a id="bins-f"></a>
+## 📦 Bins de frequency
+
+```sql
+CASE
+  WHEN freq < 10 THEN 0   -- 1…9
+  WHEN freq < 20 THEN 1
+  WHEN freq < 30 THEN 2
+  ELSE 3                  -- ≥ 30
+END
+```
+
+Barras centradas en 5, 15, 25, 35 (eje estilo PDF).
+
+[↑ Volver al índice](#indice)
+
+---
+
+<a id="bins-m"></a>
+## 💰 Bins de monetary
+
+```sql
+CASE
+  WHEN total_spent < 50  THEN 0
+  WHEN total_spent < 100 THEN 1
+  WHEN total_spent < 150 THEN 2
+  WHEN total_spent < 200 THEN 3
+  ELSE 4
+END
 ```
 
 [↑ Volver al índice](#indice)
 
 ---
 
-<a id="sql-f"></a>
-## 1️⃣ SQL de frequency
+<a id="sql"></a>
+## 🗄️ SQL
 
 ```sql
-WITH per_user AS (
-    SELECT user_id, COUNT(*)::int AS freq
-    FROM customers
-    WHERE event_type = 'purchase'
-    GROUP BY user_id
-),
-capped AS (
-    SELECT CASE WHEN freq >= 30 THEN 30 ELSE freq END AS freq_bin
-    FROM per_user
-)
-SELECT freq_bin, COUNT(*) AS n_customers
-FROM capped
-GROUP BY freq_bin
-ORDER BY freq_bin;
+SELECT user_id, COUNT(*) AS freq
+FROM customers
+WHERE event_type = 'purchase'
+GROUP BY user_id;
+
+SELECT user_id, SUM(price) AS total_spent
+FROM customers
+WHERE event_type = 'purchase' AND price IS NOT NULL
+GROUP BY user_id;
 ```
-
-[↑ Volver al índice](#indice)
-
----
-
-<a id="sql-m"></a>
-## 2️⃣ SQL de monetary
-
-```sql
-WITH per_user AS (
-    SELECT user_id, SUM(price) AS total_spent
-    FROM customers
-    WHERE event_type = 'purchase' AND price IS NOT NULL
-    GROUP BY user_id
-)
--- CASE → bin_id 0..4 (0–50 … 200+)
-```
-
-Los `CASE` del script asignan cada gasto a un tramo.
 
 [↑ Volver al índice](#indice)
 
 ---
 
 <a id="plot"></a>
-## 🎨 Cómo se dibujan las barras
+## 🎨 Barras
 
 ```python
-labels = [str(b) if b < 30 else "30+" for b in bins]
-ax.bar(labels, counts)
+ax.bar([5, 15, 25, 35], counts, width=9)
+ax.set_xticks([0, 10, 20, 30])
+ax.set_xlabel("frequency")
 ax.set_ylabel("customers")
 ```
-
-Misma API `ax.bar` que en EX01 (ventas mensuales), distinta semántica (clientes por hábito, no millones de ₳ por mes).
 
 [↑ Volver al índice](#indice)
 
 ---
 
 <a id="ejecutar"></a>
-## ▶️ Ejecutar y comprobar
+## ▶️ Ejecutar
 
 ```bash
 python3 Building.py
 ```
 
-Comprueba:
+Actualiza `imgs/customers_by_purchase_frecuency.png` y `imgs/customers_by_total_spend.png` (enlaces del README).
 
-1. La suma de `n_customers` en frequency = `COUNT(DISTINCT user_id)` con purchase.  
-2. Igual para monetary.  
-3. La barra `1` (una sola compra) suele ser la más alta.  
-4. Existen ambos PNG.
-
-```sql
-SELECT COUNT(DISTINCT user_id)
-FROM customers
-WHERE event_type = 'purchase';
-```
+Comprueba: `TOTAL` frequency = `TOTAL` monetary = `COUNT(DISTINCT user_id)` con purchase.
 
 [↑ Volver al índice](#indice)
 
 ---
 
 <a id="defensa"></a>
-## 🎤 Defensa (guion)
+## 🎤 Defensa
 
-1. Solo **purchase** desde **customers**.  
-2. **Frequency** = conteo de compras por usuario; bins hasta **30+**.  
-3. **Monetary** = suma de precios por usuario; tramos de 50 ₳ hasta **200+**.  
-4. Dos **bar charts** = “edificios” de clientes.  
-5. Encaja con RFM previo al clustering (EX04/EX05).
+1. Solo **purchase** en **customers**.  
+2. Frequency: bins de **10**.  
+3. Monetary: bins de **50 ₳**.  
+4. Eje Y = **clientes**.  
+5. Cifras ≠ PDF por **febrero** (subject).
 
 [↑ Volver al índice](#indice)
 
@@ -246,23 +224,9 @@ WHERE event_type = 'purchase';
 
 | Síntoma | Causa | Qué hacer |
 |---------|-------|-----------|
-| Un solo “edificio” enorme | Agrupaste eventos, no usuarios | `GROUP BY user_id` primero |
-| Frequency sin 30+ | Cap distinto | Revisar `FREQ_CAP` |
-| Monetary vacío | `price` NULL | Filtrar `price IS NOT NULL` |
-| Suma de barras ≠ usuarios | Doble conteo | Un usuario → un solo bin |
-
-[↑ Volver al índice](#indice)
-
----
-
-<a id="ejercicios"></a>
-## ✏️ Mini ejercicios
-
-1. Un usuario con 45 compras: ¿en qué barra de frequency cae?  
-2. Un usuario que gastó 175 ₳: ¿qué tramo monetary?  
-3. ¿Por qué no usar `event_type = 'view'` aquí?
-
-*(1: 30+. 2: 150–200. 3: frequency/monetary de compra, no de visita.)*
+| ~30 barras finas | Bin por entero | Paso 10 |
+| Suma ≠ compradores | Filtro / doble conteo | `COUNT(DISTINCT user_id)` |
+| README sin imagen nueva | No re-ejecutaste | `python3 Building.py` |
 
 [↑ Volver al índice](#indice)
 
@@ -274,25 +238,12 @@ WHERE event_type = 'purchase';
 | Término | Significado |
 |---------|-------------|
 | **Frequency** | Nº de compras del cliente |
-| **Monetary** | Gasto total del cliente |
-| **Bin** | Intervalo que agrupa valores |
-| **CTE (`WITH ...`)** | Subconsulta nombrada en SQL |
-| **RFM** | Recency, Frequency, Monetary |
+| **Monetary** | Gasto total (₳) |
+| **Bin** | Intervalo del histograma |
+| **Highest Building** | Barras altas = muchos clientes |
 
 [↑ Volver al índice](#indice)
 
 ---
 
-<a id="puente"></a>
-## 🔗 Puente EX02 → EX03 → EX04
-
-| EX02 | EX03 | EX04 |
-|------|------|------|
-| Distribución de **precios** (caja) | Distribución de **clientes** por F y M | **Elbow** sobre features de clientes |
-| Un valor por ítem / cesta | Bins de hábitos | k óptimo para clustering |
-
-[↑ Volver al índice](#indice)
-
----
-
-*Module 2 – EX03 – Guía Python · sternero – 42 Málaga – Octubre 2026*
+*Module 2 – EX03 – Guía Python · sternero – 42 Málaga – 2026*

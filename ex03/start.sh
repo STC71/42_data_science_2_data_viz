@@ -4,7 +4,7 @@
 # PISCINE PEDAGO - DATA SCIENCE
 # Module 2 – Data Viz – EX03 Highest Building
 #
-# sternero – 42 Málaga – Octubre 2026
+# sternero – 42 Málaga – 2026
 #
 # Asistente opcional (NO sustituye Building.*)
 # - Estado del entorno (Module 0 .env, Docker, DISPLAY)
@@ -179,7 +179,7 @@ sql_buyers()
 
 sql_frequency_preview()
 {
-    section "🔢  Frequency (muestra: bins 1–10 y 30+)"
+    section "🔢  Frequency (bins de 10, como el PDF)"
     if ! container_up; then err "Sin contenedor"; return 1; fi
     docker exec -i "$CONTAINER_NAME" \
         psql -U "$(db_user)" -d "$(db_name)" -c \
@@ -189,22 +189,25 @@ sql_frequency_preview()
              WHERE event_type = 'purchase'
              GROUP BY user_id
          ),
-         capped AS (
-             SELECT CASE WHEN freq >= 30 THEN 30 ELSE freq END AS freq_bin
+         binned AS (
+             SELECT CASE
+                 WHEN freq < 10 THEN '0–10'
+                 WHEN freq < 20 THEN '10–20'
+                 WHEN freq < 30 THEN '20–30'
+                 ELSE '30+'
+             END AS tramo
              FROM per_user
          )
-         SELECT freq_bin,
-                COUNT(*) AS n_customers
-         FROM capped
-         WHERE freq_bin <= 10 OR freq_bin = 30
-         GROUP BY freq_bin
-         ORDER BY freq_bin;"
-    info "La barra 30 agrupa frequency >= 30 (etiqueta 30+ en el gráfico)."
+         SELECT tramo, COUNT(*) AS n_customers
+         FROM binned
+         GROUP BY tramo
+         ORDER BY MIN(tramo);"
+    info "Deben salir 4 tramos (no una fila por cada entero 1,2,3…)."
 }
 
 sql_monetary_preview()
 {
-    section "💰  Monetary (clientes por tramo de gasto total)"
+    section "💰  Monetary (tramos de 50 ₳, como el PDF)"
     if ! container_up; then err "Sin contenedor"; return 1; fi
     docker exec -i "$CONTAINER_NAME" \
         psql -U "$(db_user)" -d "$(db_name)" -c \
@@ -216,10 +219,10 @@ sql_monetary_preview()
          ),
          binned AS (
              SELECT CASE
-                 WHEN total_spent >= 0   AND total_spent < 50  THEN '0–50'
-                 WHEN total_spent >= 50  AND total_spent < 100 THEN '50–100'
-                 WHEN total_spent >= 100 AND total_spent < 150 THEN '100–150'
-                 WHEN total_spent >= 150 AND total_spent < 200 THEN '150–200'
+                 WHEN total_spent < 50  THEN '0–50'
+                 WHEN total_spent < 100 THEN '50–100'
+                 WHEN total_spent < 150 THEN '100–150'
+                 WHEN total_spent < 200 THEN '150–200'
                  ELSE '200+'
              END AS tramo
              FROM per_user
