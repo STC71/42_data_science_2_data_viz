@@ -9,16 +9,15 @@
 # Asistente opcional (NO sustituye Building.*)
 # - Estado del entorno (Module 0 .env, Docker, DISPLAY)
 # - PostgreSQL: arranque si hace falta
-# - SQL de control: frequency (bins) y monetary (tramos)
-# - Ejecutar Building.py (ventana o solo PNG)
-# - psql, verificar entrega Building.*, documentación
+# - SQL de control: frequency / monetary
+# - verify_ex03.sql y Building.py --self-check
+# - Ejecutar Building.py, psql, documentación
 #
 # Uso:
 #   cd /ruta/a/data_science_2_data_viz/ex03
 #   chmod +x start.sh
 #   ./start.sh
 #
-#   # o en el monorepo del campus:
 #   cd ~/sgoinfre/.../piscine_pedago_data_science/data_science_2_data_viz/ex03
 #   chmod +x start.sh; ./start.sh
 # ============================================================
@@ -46,6 +45,7 @@ print_header()
     echo
     echo -e "${CYAN}${BOLD}╔════════════════════════════════════════════════════════════╗${RESET}"
     echo -e "${CYAN}${BOLD}║  Module 2 – Data Viz – EX03 – Highest Building             ║${RESET}"
+    echo -e "${CYAN}${BOLD}║  sternero – 42 Málaga                                      ║${RESET}"
     echo -e "${CYAN}${BOLD}╚════════════════════════════════════════════════════════════╝${RESET}"
     echo
     echo -e "${WHITE}  ${SCRIPT_DIR}${RESET}"

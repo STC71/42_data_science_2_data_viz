@@ -4,7 +4,7 @@
 # PISCINE PEDAGO - DATA SCIENCE
 # Module 2 – Data Viz – EX02 My beautiful mustache
 #
-# sternero – 42 Málaga – Octubre2026
+# sternero – 42 Málaga – 2026
 #
 # Asistente opcional (NO sustituye mustache.*)
 # - Estado del entorno (Module 0 .env, Docker, DISPLAY)
@@ -18,7 +18,6 @@
 #   chmod +x start.sh
 #   ./start.sh
 #
-#   # o en el monorepo del campus:
 #   cd ~/sgoinfre/.../piscine_pedago_data_science/data_science_2_data_viz/ex02
 #   chmod +x start.sh; ./start.sh
 # ============================================================
@@ -46,6 +45,7 @@ print_header()
     echo
     echo -e "${CYAN}${BOLD}╔════════════════════════════════════════════════════════════╗${RESET}"
     echo -e "${CYAN}${BOLD}║  Module 2 – Data Viz – EX02 – My beautiful mustache        ║${RESET}"
+    echo -e "${CYAN}${BOLD}║  sternero – 42 Málaga                                      ║${RESET}"
     echo -e "${CYAN}${BOLD}╚════════════════════════════════════════════════════════════╝${RESET}"
     echo
     echo -e "${WHITE}  ${SCRIPT_DIR}${RESET}"

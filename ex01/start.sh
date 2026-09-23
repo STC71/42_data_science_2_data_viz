@@ -1,121 +1,263 @@
 #!/usr/bin/env bash
-# Module 2 – EX01 – chart.* assistant
+
+# ============================================================
+# PISCINE PEDAGO - DATA SCIENCE
+# Module 2 – Data Viz – EX01 initial data exploration
+#
+# sternero – 42 Málaga – 2026
+#
+# Asistente opcional (NO sustituye chart.*)
+# - Estado del entorno (Module 0 .env, Docker, DISPLAY)
+# - PostgreSQL: arranque si hace falta
+# - SQL de control: purchase Oct 2022 – Feb 2023
+# - Ejecutar chart.py (ventana o solo PNG)
+# - psql, verificar entrega chart.*, documentación
+#
+# Uso:
+#   cd /ruta/a/data_science_2_data_viz/ex01
+#   chmod +x start.sh
+#   ./start.sh
+#
+#   cd ~/sgoinfre/.../piscine_pedago_data_science/data_science_2_data_viz/ex01
+#   chmod +x start.sh; ./start.sh
+# ============================================================
+
 set -u
-RESET='\033[0m'; BOLD='\033[1m'; RED='\033[0;31m'; GREEN='\033[0;32m'
-YELLOW='\033[1;33m'; CYAN='\033[0;36m'; MAGENTA='\033[0;35m'
+
+RESET=$'\033[0m'
+BOLD=$'\033[1m'
+RED=$'\033[0;31m'
+GREEN=$'\033[0;32m'
+YELLOW=$'\033[1;33m'
+CYAN=$'\033[0;36m'
+MAGENTA=$'\033[0;35m'
+WHITE=$'\033[1;37m'
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 MODULE2_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 CONTAINER_NAME="postgres_piscineds"
 CHART_PY="$SCRIPT_DIR/chart.py"
 
-ok(){ echo -e "${GREEN}✓ $1${RESET}"; }
-warn(){ echo -e "${YELLOW}⚠ $1${RESET}"; }
-err(){ echo -e "${RED}✗ $1${RESET}"; }
-info(){ echo -e "${CYAN}→ $1${RESET}"; }
-pause(){ echo; read -r -p "$(echo -e "${CYAN}Pulsa Enter...${RESET}")"; }
-section(){ echo; echo -e "${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "${BOLD}$1${RESET}"; echo -e "${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo; }
-
-ask_yes_no(){
-  local p="$1" d="$2" a
-  if [ "$d" = "s" ]; then read -r -p "$(echo -e "${YELLOW}${p} [S/n] → ${RESET}")" a; a=${a:-s}
-  else read -r -p "$(echo -e "${YELLOW}${p} [s/N] → ${RESET}")" a; a=${a:-n}; fi
-  [[ "$a" =~ ^[sS]$ ]]
+print_header()
+{
+    clear
+    echo
+    echo -e "${CYAN}${BOLD}╔════════════════════════════════════════════════════════════╗${RESET}"
+    echo -e "${CYAN}${BOLD}║  Module 2 – Data Viz – EX01 initial data exploration       ║${RESET}"
+    echo -e "${CYAN}${BOLD}║  sternero – 42 Málaga                                      ║${RESET}"
+    echo -e "${CYAN}${BOLD}╚════════════════════════════════════════════════════════════╝${RESET}"
+    echo
+    echo -e "${WHITE}  $SCRIPT_DIR${RESET}"
+    echo
 }
 
-find_module0(){
-  local c
-  for c in \
-    "$MODULE2_DIR/../data_science_0_creation_db" \
-    "$HOME/sgoinfre/42_outer_core/piscine_pedago_data_science/data_science_0_creation_db" \
-    "$HOME/sgoinfre/students/$(id -un)/42_outer_core/piscine_pedago_data_science/data_science_0_creation_db"
-  do
-    [[ -f "$c/ex00/.env" ]] && { echo "$(cd -- "$c" && pwd)"; return 0; }
-  done
-  return 1
+ask_yes_no()
+{
+    local prompt="$1" default="$2" answer
+    if [ "$default" = "s" ]; then
+        read -r -p "$(echo -e "${YELLOW}${prompt} [S/n] → ${RESET}")" answer
+        answer=${answer:-s}
+    else
+        read -r -p "$(echo -e "${YELLOW}${prompt} [s/N] → ${RESET}")" answer
+        answer=${answer:-n}
+    fi
+    [[ "$answer" =~ ^[sS]$ ]]
+}
+
+pause() { echo; read -r -p "$(echo -e "${CYAN}Pulsa Enter...${RESET}")"; }
+
+section()
+{
+    echo
+    echo -e "${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${BOLD}$1${RESET}"
+    echo -e "${MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo
+}
+
+ok()   { echo -e "${GREEN}✓ $1${RESET}"; }
+warn() { echo -e "${YELLOW}⚠ $1${RESET}"; }
+err()  { echo -e "${RED}✗ $1${RESET}"; }
+info() { echo -e "${CYAN}→ $1${RESET}"; }
+
+find_module0()
+{
+    local c
+    for c in \
+        "$MODULE2_DIR/../data_science_0_creation_db" \
+        "$MODULE2_DIR/../../data_science_0_creation_db" \
+        "$HOME/sgoinfre/42_outer_core/piscine_pedago_data_science/data_science_0_creation_db" \
+        "$HOME/sgoinfre/students/$(id -un)/42_outer_core/piscine_pedago_data_science/data_science_0_creation_db"
+    do
+        if [[ -f "$c/ex00/.env" ]] || [[ -f "$c/ex00/docker-compose.yml" ]]; then
+            echo "$(cd -- "$c" && pwd)"
+            return 0
+        fi
+    done
+    return 1
 }
 
 MODULE0_DIR="$(find_module0 || true)"
 ENV_FILE=""
 [[ -n "$MODULE0_DIR" && -f "$MODULE0_DIR/ex00/.env" ]] && ENV_FILE="$MODULE0_DIR/ex00/.env"
 
-db_user(){
-  if [[ -n "$ENV_FILE" ]]; then sed -n 's/^POSTGRES_USER=//p' "$ENV_FILE" | head -1
-  else id -un; fi
-}
-db_name(){
-  if [[ -n "$ENV_FILE" ]]; then sed -n 's/^POSTGRES_DB=//p' "$ENV_FILE" | head -1
-  else echo piscineds; fi
-}
-
-status_env(){
-  section "Estado"
-  [[ -n "$MODULE0_DIR" ]] && ok "Module 0: $MODULE0_DIR" || warn "Module 0 no encontrado"
-  if docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$CONTAINER_NAME"; then ok "Docker Up"
-  else warn "Contenedor parado"; fi
-  [[ -f "$CHART_PY" ]] && ok "chart.py" || err "Falta chart.py"
+read_env()
+{
+    POSTGRES_USER=""
+    POSTGRES_DB=""
+    [[ -n "$ENV_FILE" && -f "$ENV_FILE" ]] || return 1
+    POSTGRES_USER="$(sed -n 's/^POSTGRES_USER=//p' "$ENV_FILE" | head -n 1)"
+    POSTGRES_DB="$(sed -n 's/^POSTGRES_DB=//p' "$ENV_FILE" | head -n 1)"
+    [[ -n "$POSTGRES_USER" && -n "$POSTGRES_DB" ]]
 }
 
-sql_purchase_check(){
-  section "SQL purchase (rango subject)"
-  docker exec -i "$CONTAINER_NAME" psql -U "$(db_user)" -d "$(db_name)" -c \
-    "SELECT COUNT(*) AS purchases FROM customers
-     WHERE event_type = 'purchase'
-       AND event_time >= TIMESTAMP '2022-10-01'
-       AND event_time <  TIMESTAMP '2023-03-01';"
-  docker exec -i "$CONTAINER_NAME" psql -U "$(db_user)" -d "$(db_name)" -c \
-    "SELECT date_trunc('month', event_time)::date AS m, COUNT(*), ROUND(SUM(price)::numeric,2)
-     FROM customers
-     WHERE event_type = 'purchase'
-       AND event_time >= TIMESTAMP '2022-10-01'
-       AND event_time <  TIMESTAMP '2023-03-01'
-     GROUP BY 1 ORDER BY 1;"
+db_user() { if read_env; then echo "$POSTGRES_USER"; else id -un 2>/dev/null || whoami; fi; }
+db_name() { if read_env; then echo "$POSTGRES_DB"; else echo "piscineds"; fi; }
+
+container_up()
+{
+    command -v docker >/dev/null 2>&1 \
+        && docker ps --format '{{.Names}}' 2>/dev/null | grep -qx "$CONTAINER_NAME"
 }
 
-run_chart(){
-  section "Ejecutar chart.py"
-  chmod +x "$CHART_PY" 2>/dev/null || true
-  echo -e "  ${BOLD}1)${RESET} Con ventana  ${BOLD}2)${RESET} Solo PNG (Agg)"
-  local c; read -r -p "$(echo -e "${YELLOW}[1/2] → ${RESET}")" c
-  case "$c" in
-    2) ( cd "$SCRIPT_DIR" && MPLBACKEND=Agg python3 "$CHART_PY" ) ;;
-    *) ( cd "$SCRIPT_DIR" && python3 "$CHART_PY" ) ;;
-  esac
+status_env()
+{
+    section "📊  Estado"
+    if [[ -n "$MODULE0_DIR" ]]; then ok "Module 0: $MODULE0_DIR"; else warn "Module 0 no localizado"; fi
+    if read_env; then ok ".env USER=$POSTGRES_USER DB=$POSTGRES_DB"; else warn "Sin .env"; fi
+    if container_up; then ok "Contenedor $CONTAINER_NAME Up"; else warn "Contenedor parado (opción 2)"; fi
+    if [[ -f "$CHART_PY" ]]; then ok "chart.py presente"; else err "Falta chart.py"; fi
+    [[ -n "${DISPLAY:-}" ]] && info "DISPLAY=$DISPLAY" || info "Sin DISPLAY → Agg / solo PNG"
 }
 
-print_header(){
-  clear
-  echo -e "${CYAN}${BOLD}Module 2 – EX01 – initial data exploration${RESET}"
-  echo -e "  ${SCRIPT_DIR}"
-  echo
+start_postgres()
+{
+    section "🐘  PostgreSQL (Module 0)"
+    if [[ -z "$MODULE0_DIR" || ! -f "$MODULE0_DIR/ex00/docker-compose.yml" ]]; then
+        err "No hay docker-compose de Module 0"; return 1
+    fi
+    if container_up; then ok "Ya Up"; return 0; fi
+    if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "$CONTAINER_NAME"; then
+        ask_yes_no "¿docker start $CONTAINER_NAME?" "s" && docker start "$CONTAINER_NAME" && sleep 2
+        return 0
+    fi
+    if ask_yes_no "¿docker compose up -d?" "s"; then
+        if command -v docker-compose >/dev/null 2>&1; then
+            ( cd "$MODULE0_DIR/ex00" && docker-compose up -d )
+        else
+            ( cd "$MODULE0_DIR/ex00" && docker compose up -d )
+        fi
+        sleep 3
+    fi
 }
 
-show_menu(){
-  echo
-  echo -e "${CYAN}${BOLD}  EX01 – menú${RESET}"
-  echo -e "  ${BOLD}1)${RESET} Estado"
-  echo -e "  ${BOLD}2)${RESET} SQL: purchase por mes"
-  echo -e "  ${BOLD}3)${RESET} Ejecutar chart.py"
-  echo -e "  ${BOLD}4)${RESET} psql"
-  echo -e "  ${BOLD}5)${RESET} Docs"
-  echo -e "  ${RED}${BOLD}q)${RESET} Salir"
-  echo
+sql_purchase_range()
+{
+    section "🛒  purchase · Oct 2022 – Feb 2023"
+    if ! container_up; then err "Sin contenedor"; return 1; fi
+    docker exec -i "$CONTAINER_NAME" psql -U "$(db_user)" -d "$(db_name)" -c \
+        "SELECT COUNT(*) AS n_purchase,
+                COUNT(DISTINCT user_id) AS n_customers,
+                ROUND(SUM(price)::numeric, 2) AS sum_price
+         FROM customers
+         WHERE event_type = 'purchase'
+           AND event_time >= '2022-10-01'
+           AND event_time <  '2023-03-01';"
 }
 
-main(){
-  print_header
-  while true; do
-    show_menu
-    local choice; read -r -p "$(echo -e "${YELLOW}Opción → ${RESET}")" choice
-    case "$choice" in
-      1) status_env; pause ;;
-      2) sql_purchase_check; pause ;;
-      3) run_chart; pause ;;
-      4) docker exec -it "$CONTAINER_NAME" psql -U "$(db_user)" -d "$(db_name)"; pause ;;
-      5) echo "README: $SCRIPT_DIR/README.md"; echo "Guía: $SCRIPT_DIR/python.md"; pause ;;
-      q|Q) exit 0 ;;
-      *) warn "Opción no válida" ;;
+run_chart()
+{
+    section "📈  Ejecutar chart.py"
+    if [[ ! -f "$CHART_PY" ]]; then err "Falta $CHART_PY"; return 1; fi
+    chmod +x "$CHART_PY" 2>/dev/null || true
+    echo -e "  ${BOLD}1)${RESET} ventana   ${BOLD}2)${RESET} solo PNG (Agg)"
+    local c
+    read -r -p "$(echo -e "${YELLOW}[1/2] → ${RESET}")" c
+    case "$c" in
+        2) ( cd "$SCRIPT_DIR" && MPLBACKEND=Agg python3 "$CHART_PY" ) ;;
+        *) ( cd "$SCRIPT_DIR" && python3 "$CHART_PY" ) ;;
     esac
-  done
+    local rc=$?
+    [[ $rc -eq 0 ]] && ok "chart.py OK" || err "código $rc"
 }
+
+open_psql()
+{
+    section "💻  psql"
+    if ! container_up; then err "Sin contenedor"; return 1; fi
+    docker exec -it "$CONTAINER_NAME" psql -U "$(db_user)" -d "$(db_name)"
+}
+
+check_delivery()
+{
+    section "📋  Entrega chart.*"
+    if ls "$SCRIPT_DIR"/chart.* >/dev/null 2>&1; then
+        ok "chart.* en ex01/"
+        ls -la "$SCRIPT_DIR"/chart.* 2>/dev/null || true
+    else
+        err "Falta chart.*"
+    fi
+}
+
+show_docs()
+{
+    section "📘  Documentación"
+    echo "  README:  $SCRIPT_DIR/README.md"
+    echo "  Guía:    $SCRIPT_DIR/python.md"
+    echo "  Module:  $MODULE2_DIR/README.md"
+    if [[ -f "$SCRIPT_DIR/python.md" ]] && ask_yes_no "¿Mostrar índice de python.md?" "n"; then
+        grep -E '^## |^### ' "$SCRIPT_DIR/python.md" 2>/dev/null | head -n 40
+    fi
+}
+
+show_menu()
+{
+    echo
+    echo -e "${CYAN}${BOLD}  MENÚ EX01 – chart${RESET}"
+    echo
+    echo -e "  ${BOLD}1)${RESET}  Estado del entorno"
+    echo -e "  ${BOLD}2)${RESET}  Levantar PostgreSQL (Module 0)"
+    echo -e "  ${BOLD}3)${RESET}  SQL: purchase Oct 2022 – Feb 2023"
+    echo -e "  ${BOLD}4)${RESET}  Ejecutar chart.py ${WHITE}(recomendado)${RESET}"
+    echo -e "  ${BOLD}5)${RESET}  Abrir psql"
+    echo -e "  ${BOLD}6)${RESET}  Verificar chart.*"
+    echo -e "  ${BOLD}7)${RESET}  Documentación"
+    echo -e "  ${BOLD}p)${RESET}  chmod +x chart.py / start.sh"
+    echo -e "  ${RED}${BOLD}q)${RESET}  ${RED}Salir${RESET}"
+    echo
+}
+
+menu_loop()
+{
+    local choice
+    echo -e "Subject: 3 charts (línea / barras / área) sobre ${BOLD}purchase${RESET}."
+    echo -e "Entrega: ${BOLD}chart.*${RESET}."
+    while true; do
+        show_menu
+        read -r -p "$(echo -e "${YELLOW}Opción → ${RESET}")" choice
+        echo
+        case "$choice" in
+            1) status_env; pause ;;
+            2) start_postgres; pause ;;
+            3) sql_purchase_range; pause ;;
+            4) run_chart; pause ;;
+            5) open_psql; pause ;;
+            6) check_delivery; pause ;;
+            7) show_docs; pause ;;
+            p|P) chmod +x "$SCRIPT_DIR/start.sh" "$CHART_PY" 2>/dev/null; ok "chmod +x"; pause ;;
+            q|Q) echo -e "${GREEN}Hasta luego.${RESET}"; exit 0 ;;
+            *) warn "Opción no válida" ;;
+        esac
+    done
+}
+
+main()
+{
+    print_header
+    info "Asistente EX01 (Module 2) · fuente: customers (warehouse Module 1)"
+    echo
+    if ask_yes_no "¿Ver estado al arrancar?" "s"; then status_env; fi
+    menu_loop
+}
+
 main "$@"
