@@ -18,9 +18,10 @@
 5. [Bins correctos (como el PDF)](#bins)
 6. [SQL (idea)](#sql)
 7. [Ejecutar](#ejecutar)
-8. [Guía Python](#guia)
-9. [Checklist](#checklist)
-10. [Navegación](#navegacion)
+8. [Verificación automática](#verificar)
+9. [Guía Python](#guia)
+10. [Checklist](#checklist)
+11. [Navegación](#navegacion)
 
 ---
 
@@ -51,7 +52,8 @@ Subject **Highest Building**:
 |---------|-----|
 | [`Building.py`](./Building.py) | Frequency + monetary (entrega `Building.*`) |
 | [`python.md`](./python.md) | Guía didáctica |
-| [`start.sh`](./start.sh) | Menú opcional |
+| [`start.sh`](./start.sh) | Menú opcional (opciones 7–9: verificación) |
+| [`verify_ex03.sql`](./verify_ex03.sql) | Informe SQL de comprobación |
 
 <p align="center">
   <img src="./imgs/building_py.png" alt="Building.py – captura de referencia" width="100%">
@@ -195,6 +197,39 @@ WHERE event_type = 'purchase';
 ---
 
 <a id="checklist"></a>
+
+<a id="verificar"></a>
+## ✅ Verificación automática
+
+Para comprobar que las **tablas impresas**, los **gráficos** y la **BD** coinciden:
+
+| Opción (`./start.sh`) | Acción |
+|-----------------------|--------|
+| **7** | `verify_ex03.sql` — informe SQL completo |
+| **8** | `Building.py --self-check` — **recomendado** (bins del gráfico vs SQL independiente) |
+| **9** | `--check-only` — verificación rápida, **sin PNG** |
+
+También por línea de comandos:
+
+```bash
+# Informe SQL completo (mismas queries de control)
+./start.sh          # menú → opción 7
+# o:
+docker exec -i postgres_piscineds   psql -U "$(whoami)" -d piscineds < verify_ex03.sql
+
+# Contraste bins del gráfico vs SQL independiente (recomendado)
+python3 Building.py --self-check
+# o menú → opción 8
+
+# Solo check, sin generar PNG
+python3 Building.py --check-only
+# o menú → opción 9
+```
+
+**Criterio OK:** suma frequency = compradores; **30+** = `HAVING COUNT(*) >= 30`; suma monetary = usuarios con price; **200+** = `HAVING SUM(price) >= 200`.
+
+[↑ Volver al índice](#indice)
+
 ## ✅ Checklist subject
 
 | Ítem | ☐ |
@@ -218,4 +253,4 @@ WHERE event_type = 'purchase';
 
 ---
 
-*Module 2 – EX03 – sternero – 42 Málaga – Octubre 2026*
+*Module 2 – EX03 – sternero – 42 Málaga – 2026*

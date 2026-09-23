@@ -246,4 +246,35 @@ Comprueba: `TOTAL` frequency = `TOTAL` monetary = `COUNT(DISTINCT user_id)` con 
 
 ---
 
-*Module 2 – EX03 – Guía Python · sternero – 42 Málaga – Octubre 2026*
+
+---
+
+<a id="verificar"></a>
+## ✅ Verificación automática (tablas = gráficos = BD)
+
+No basta con “que salga un histograma”: los números de las barras deben coincidir con SQL independiente.
+
+| Opción en `./start.sh` | Acción |
+|------------------------|--------|
+| **7** | `verify_ex03.sql` — informe SQL completo |
+| **8** | `Building.py --self-check` — **recomendado** |
+| **9** | `--check-only` — rápido, **sin PNG** |
+
+```bash
+python3 Building.py --self-check
+python3 Building.py --check-only
+docker exec -i postgres_piscineds   psql -U "$(whoami)" -d piscineds < verify_ex03.sql
+```
+
+El self-check comprueba, entre otras cosas:
+
+1. Suma de bins frequency = `COUNT(DISTINCT user_id)` con `purchase`
+2. Barra **30+** = `HAVING COUNT(*) >= 30`
+3. Suma monetary = usuarios con `price IS NOT NULL`
+4. Barra **200+** = `HAVING SUM(price) >= 200`
+
+Si los cuatro puntos pasan, **tablas, gráficos y warehouse están alineados**.
+
+[↑ Volver al índice](#indice)
+
+*Module 2 – EX03 – Guía Python · sternero – 42 Málaga – 2026*
