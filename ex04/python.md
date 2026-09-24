@@ -370,4 +370,4 @@ Estos valores dependen del warehouse (p. ej. con febrero incluido); lo estable e
 
 [↑ Volver al índice](#indice)
 
-*Module 2 – EX04 – Guía Python · sternero – 42 Málaga – 2026*
+*Module 2 – EX04 – Guía Python · sternero – 42 Málaga – Octubre 2026*

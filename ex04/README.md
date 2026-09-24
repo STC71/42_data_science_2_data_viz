@@ -162,6 +162,10 @@ inertia (error interno)
 6. Proponer un k (heurística + recuerdo de que EX05 pide ≥ 4)
 ```
 
+<p align="center">
+  <img src="./imgs/elbow_diagrama_flujo.jpg" alt="Piscine Data Science – Module 2 – Data Viz · Elbow Method" width="100%">
+</p>
+
 No hace falta memorizar el código: basta entender este flujo para la defensa.
 
 [↑ Volver al índice](#indice)
@@ -272,4 +276,4 @@ En el menú (`./start.sh` → Estado), **✓ scikit-learn importable** solo indi
 
 Mencionar EX05 en este ejercicio es **correcto**: el Elbow prepara el número de grupos; EX05 pedirá ≥ 4 segmentos. **No** hace falta haber empezado EX05. Ampliación en [python.md](./python.md#ref-ex05).
 
-*Module 2 – EX04 – sternero – 42 Málaga – 2026*
+*Module 2 – EX04 – sternero – 42 Málaga – Octubre 2026*
