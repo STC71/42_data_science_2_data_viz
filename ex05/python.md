@@ -100,6 +100,13 @@ Así las etiquetas **siguen a los datos**, no a un orden fijo del algoritmo.
 1. **`customers_per_cluster.png`** — barras: cuántos clientes hay en cada cartel.  
 2. **`clusters_frequency_monetary.png`** — scatter Frequency × Monetary coloreado por grupo (muestra aleatoria para no saturar el PNG).
 
+<p align="center">
+  <img src="./imgs/customers_per_cluster.png" alt="Piscine Data Science – Module 2 – Data Viz · Clustering" width="100%">
+</p>
+<p align="center">
+  <img src="./imgs/clusters_frequency_monetary.png" alt="Piscine Data Science – Module 2 – Data Viz · Clustering" width="100%">
+</p>
+
 [↑ Volver al índice](#indice)
 
 ---
@@ -116,6 +123,10 @@ Así las etiquetas **siguen a los datos**, no a un orden fijo del algoritmo.
 | `print_cluster_report` | Tabla en consola |
 | `plot_group_sizes` | Gráfico 1 |
 | `plot_scatter_fm` | Gráfico 2 |
+
+<p align="center">
+  <img src="./imgs/clustering_diagrama_flujo.jpg" alt="Piscine Data Science – Module 2 – Data Viz · Clustering" width="100%">
+</p>
 
 [↑ Volver al índice](#indice)
 
@@ -176,9 +187,9 @@ No hace falta rehacer el Elbow dentro de este script: se reutiliza la lógica RF
 <a id="etiquetado-afinado"></a>
 ## 🏷️ Etiquetado afinado (new vs inactive vs loyalty)
 
-### Problema que resolvía el afinado
+### Problema que resuelve el afinado
 
-Con la regla antigua (“inactive = máxima recency global; new = mínima frequency del resto”), en datos reales **new** e **inactive** salían con frequency ≈ 7 y monetary ≈ 36 ₳: casi el mismo perfil; solo se distinguían por unos días de recency. Decir “new” por “el que compra menos” no contaba una historia de negocio clara.
+Con la regla (“inactive = máxima recency global; new = mínima frequency del resto”), en datos reales **new** e **inactive** saldrían con frequency ≈ 7 y monetary ≈ 36 ₳: casi el mismo perfil; solo se distinguían por unos días de recency. Decir “new” por “el que compra menos” no contaba una historia de negocio clara.
 
 ### Regla actual (dos pasos)
 
@@ -211,7 +222,7 @@ Los que sí gastan se escalonan en **silver / gold / platinum** como tarjetas de
 ---
 
 <a id="lectura-resultados"></a>
-## 📊 Cómo leer una corrida típica
+## 📊 Lectura de una ejecución típica
 
 En el warehouse completo (~110 k compradores) es normal ver:
 
