@@ -205,4 +205,23 @@ python3 Clustering.py
 
 ---
 
+
+---
+
+<a id="etiquetado-afinado"></a>
+## 🏷️ Cómo se asignan las etiquetas (tras el afinado)
+
+KMeans solo devuelve ids 0…4. Los **nombres de negocio** se deducen de los centroides RFM:
+
+1. **Loyalty** — los 3 grupos con mayor **monetary** → `silver` &lt; `gold` &lt; `platinum` (por gasto del centroide).
+2. **new / inactive** — los 2 que quedan (bajo volumen):
+   - **inactive** = mayor **recency** (más días sin comprar)
+   - **new** = menor **recency** (última compra más reciente *dentro* de ese bloque frío)
+
+Así no se fuerza “new = el de menos compras” cuando new e inactive tienen F y M casi iguales (caso habitual en este warehouse).
+
+**Nota de defensa:** “new” aquí no significa “alta ayer”, sino el segmento de bajo gasto **menos dormido** que inactive. Las campañas de welcome vs win-back se apoyan en ese matiz de recency.
+
+[↑ Volver al índice](#indice)
+
 *Module 2 – EX05 – sternero – 42 Málaga – Octubre 2026*

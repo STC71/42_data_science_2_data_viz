@@ -299,32 +299,63 @@ def assign_business_labels(
 ) -> dict[int, str]:
     """
     Map cluster_id → etiqueta de negocio a partir del centroide en escala real
-    (recency_days, frequency, monetary).
+    (columnas: recency_days, frequency, monetary).
 
-    Reglas (coherentes con el subject):
-      • inactive: recency más alta (hace más tiempo que no compra)
-      • new: frequency más baja entre el resto (pocas compras)
-      • entre los que quedan, ordenar por monetary: platinum > gold > silver
+    Estrategia en dos pasos (más alineada con marketing que solo “min F”):
+
+      1) Loyalty (silver / gold / platinum)
+         Los 3 centroides con mayor monetary (gasto típico del grupo).
+         Dentro de ellos, orden monetary ascendente → silver < gold < platinum.
+
+      2) new vs inactive (los 2 centroides que quedan, bajo volumen)
+         • inactive = mayor recency (hace más tiempo de la última compra)
+         • new      = menor recency (última compra más reciente dentro del
+           bloque de bajo gasto; no implica “cliente de ayer”, sino el
+           segmento frío-bajo menos dormido)
+
+    Así new e inactive no compiten por “quién tiene menos compras” cuando
+    ambos clusters son casi iguales en F y M (caso típico del warehouse).
     """
     n = centroids_original.shape[0]
     ids = list(range(n))
-    # inactive = mayor recency
-    inactive_id = max(ids, key=lambda i: centroids_original[i, 0])
-    remaining = [i for i in ids if i != inactive_id]
-    # new = menor frequency entre los restantes
-    new_id = min(remaining, key=lambda i: centroids_original[i, 1])
-    remaining = [i for i in remaining if i != new_id]
-    # loyalty por monetary ascendente → silver, gold, platinum
-    remaining_sorted = sorted(remaining, key=lambda i: centroids_original[i, 2])
-    labels = {inactive_id: "inactive_customer", new_id: "new_customer"}
+    # --- 1) loyalty: top por monetary ---
+    by_money = sorted(ids, key=lambda i: centroids_original[i, 2], reverse=True)
+    n_loyalty = min(3, max(0, n - 2))  # dejar al menos 2 para new/inactive si n>=5
+    if n <= 3:
+        # edge case: todo loyalty + sin new/inactive formales
+        n_loyalty = n
+    loyalty_ids = by_money[:n_loyalty]
+    rest_ids = by_money[n_loyalty:]
+
     loyalty_names = ["silver", "gold", "platinum"]
-    # Si k != 5, repartir nombres de loyalty de forma estable
-    if len(remaining_sorted) <= len(loyalty_names):
-        for cid, name in zip(remaining_sorted, loyalty_names[-len(remaining_sorted) :]):
-            labels[cid] = name
-    else:
-        for i, cid in enumerate(remaining_sorted):
-            labels[cid] = loyalty_names[min(i, len(loyalty_names) - 1)]
+    loyalty_sorted = sorted(loyalty_ids, key=lambda i: centroids_original[i, 2])
+    labels: dict[int, str] = {}
+    # asignar desde la cola de nombres (si hay 1 loyalty → platinum, si 2 → gold+platinum)
+    names_slice = loyalty_names[-len(loyalty_sorted) :] if loyalty_sorted else []
+    for cid, name in zip(loyalty_sorted, names_slice):
+        labels[cid] = name
+
+    # --- 2) new / inactive entre el resto ---
+    if len(rest_ids) == 1:
+        # solo uno: si recency alta → inactive, si no → new
+        cid = rest_ids[0]
+        labels[cid] = (
+            "inactive_customer"
+            if centroids_original[cid, 0] >= np.median(centroids_original[:, 0])
+            else "new_customer"
+        )
+    elif len(rest_ids) >= 2:
+        inactive_id = max(rest_ids, key=lambda i: centroids_original[i, 0])
+        new_id = min(rest_ids, key=lambda i: centroids_original[i, 0])
+        # si empatan en recency, desempate: menor frequency = new
+        if inactive_id == new_id:
+            new_id = min(rest_ids, key=lambda i: centroids_original[i, 1])
+            inactive_id = max(rest_ids, key=lambda i: centroids_original[i, 0])
+        labels[inactive_id] = "inactive_customer"
+        labels[new_id] = "new_customer"
+        for cid in rest_ids:
+            if cid not in labels:
+                labels[cid] = "new_customer"
     return labels
 
 
@@ -381,9 +412,9 @@ def print_cluster_report(
     print(f"{'TOTAL':<20s} {len(labels_raw):8,d}")
     print()
     print("Lectura rápida de centroides:")
-    print("  inactive → recency alta (días sin comprar)")
-    print("  new      → frequency baja")
-    print("  silver / gold / platinum → monetary creciente")
+    print("  silver / gold / platinum → top monetary (loyalty)")
+    print("  inactive → entre el resto, mayor recency (más tiempo sin comprar)")
+    print("  new      → entre el resto, menor recency (último contacto más reciente)")
     print()
 
 

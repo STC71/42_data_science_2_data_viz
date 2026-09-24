@@ -170,4 +170,60 @@ No hace falta rehacer el Elbow dentro de este script: se reutiliza la lógica RF
 
 ---
 
+
+---
+
+<a id="etiquetado-afinado"></a>
+## 🏷️ Etiquetado afinado (new vs inactive vs loyalty)
+
+### Problema que resolvía el afinado
+
+Con la regla antigua (“inactive = máxima recency global; new = mínima frequency del resto”), en datos reales **new** e **inactive** salían con frequency ≈ 7 y monetary ≈ 36 ₳: casi el mismo perfil; solo se distinguían por unos días de recency. Decir “new” por “el que compra menos” no contaba una historia de negocio clara.
+
+### Regla actual (dos pasos)
+
+```text
+1) Ordenar centroides por monetary (descendente)
+   → top 3 = loyalty → silver < gold < platinum (monetary ascendente)
+
+2) Los 2 restantes (bajo volumen)
+   → inactive = mayor recency
+   → new      = menor recency
+```
+
+### Analogía
+
+Imagina dos montones de clientes que casi no gastan:
+
+- Uno lleva **más tiempo** sin pasar por la tienda → cupón de **reactivación** (inactive).
+- El otro, igual de “pequeño” en gasto, pero su última visita es **más reciente** → mensaje de **bienvenida / segunda compra** (new).
+
+Los que sí gastan se escalonan en **silver / gold / platinum** como tarjetas de fidelidad.
+
+### Qué no cambia
+
+- Sigue siendo **KMeans** (algoritmo de clustering del subject).
+- Siguen siendo **≥ 4 grupos** y **≥ 2 gráficos**.
+- Solo mejora la **lectura comercial** de las etiquetas.
+
+[↑ Volver al índice](#indice)
+
+---
+
+<a id="lectura-resultados"></a>
+## 📊 Cómo leer una corrida típica
+
+En el warehouse completo (~110 k compradores) es normal ver:
+
+| Bloque | Orden de magnitud | Idea |
+|--------|-------------------|------|
+| new + inactive | decenas de miles cada uno | La base: poco volumen |
+| silver | ~10 k | Loyalty medio |
+| gold | ~2 k | Loyalty alto |
+| platinum | cientos | Muy pocos, mucho gasto |
+
+El scatter Frequency × Monetary debe mostrar **platinum/gold** a la derecha/arriba y el bloque new/inactive cerca del origen. Si new e inactive se solapan en F×M, es esperado: su diferencia principal es **recency** (no visible en ese eje).
+
+[↑ Volver al índice](#indice)
+
 *Module 2 – EX05 – Guía Python · sternero – 42 Málaga – Octubre 2026*
