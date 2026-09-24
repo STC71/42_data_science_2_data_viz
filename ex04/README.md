@@ -1,7 +1,7 @@
 # 📐 Ejercicio 04 – Elbow (Método del codo)
 
 <p align="center">
-  <img src="../imgs/banner_23.jpg" alt="Piscine Data Science – Module 2 – Data Viz · Elbow Method" width="100%">
+  <img src="../imgs/banner_24.jpg" alt="Piscine Data Science – Module 2 – Data Viz · Elbow Method" width="100%">
 </p>
 
 [← README Module 2](../README.md) · [← EX03 Highest Building](../ex03/README.md)
@@ -21,8 +21,9 @@
 8. [Ejecutar](#ejecutar)
 9. [Cómo defender el k elegido](#defensa)
 10. [Guía Python](#guia)
-11. [Checklist](#checklist)
-12. [Navegación](#navegacion)
+11. [Defensa (guion ampliado)](#defensa-detallada)
+12. [Checklist](#checklist)
+13. [Navegación](#navegacion)
 
 ---
 
@@ -212,6 +213,28 @@ Plantilla breve:
 ---
 
 <a id="checklist"></a>
+
+<a id="defensa-detallada"></a>
+## 🎤 Defensa (guion ampliado)
+
+Resumen operativo de una corrida típica (110 518 clientes RFM en el warehouse completo):
+
+> RFM por `user_id` (solo `purchase`), StandardScaler, KMeans k=1…10.  
+> La inertia cae fuerte hasta **~3–4** y luego se aplana.  
+> Elijo **k = 4** por el codo y porque EX05 pide **al menos 4 grupos** (new / inactive / loyalty…).
+
+### Por qué este argumento encaja con el subject
+
+1. **Datos** — Solo eventos `purchase`; cada fila del modelo es un cliente, no una línea de ticket.
+2. **RFM** — Tres preguntas de negocio: ¿hace cuánto compró?, ¿cuántas veces?, ¿cuánto gastó?
+3. **Escala** — Sin `StandardScaler`, Monetary (₳) dominaría frente a Frequency/Recency.
+4. **Curva** — Más clusters bajan siempre la inertia; el **codo** es donde la mejora marginal se suaviza (en la práctica hacia 3–4).
+5. **k = 4** — Compromiso entre el codo y el subject de EX05 (≥ 4 segmentos comerciales para e-mail).
+
+El PNG de la curva queda en la raíz del ejercicio: [`elbow_method.png`](./elbow_method.png).
+
+[↑ Volver al índice](#indice)
+
 ## ✅ Checklist subject
 
 | Ítem | ☐ |
@@ -233,5 +256,20 @@ Plantilla breve:
 - [Siguiente: EX05 Clustering →](../ex05/README.md)
 
 ---
+
+
+---
+
+<a id="nota-sklearn"></a>
+## 📎 Nota: «scikit-learn importable»
+
+En el menú (`./start.sh` → Estado), **✓ scikit-learn importable** solo indica que `import sklearn` funciona. Si aparece ⚠, `elbow.py` intentará instalar el paquete. Detalle en [python.md](./python.md#sklearn-importable).
+
+---
+
+<a id="nota-ex05"></a>
+## 📎 Nota: referencias a EX05 desde EX04
+
+Mencionar EX05 en este ejercicio es **correcto**: el Elbow prepara el número de grupos; EX05 pedirá ≥ 4 segmentos. **No** hace falta haber empezado EX05. Ampliación en [python.md](./python.md#ref-ex05).
 
 *Module 2 – EX04 – sternero – 42 Málaga – 2026*

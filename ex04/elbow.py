@@ -59,6 +59,14 @@ warnings.filterwarnings(
     category=UserWarning,
     module=r"matplotlib(\..*)?",
 )
+# En el campus, el SciPy del sistema (apt) pide NumPy < 1.25, pero el stack
+# gráfico estable de la piscine usa NumPy 1.26.x (--user / .venv). El aviso
+# "A NumPy version >= … and < 1.25.0 is required for this version of SciPy"
+# no impide KMeans ni el plot; solo ensucia la consola. Se silencia a propósito.
+warnings.filterwarnings(
+    "ignore",
+    message=r"A NumPy version .* is required for this version of SciPy.*",
+)
 
 # ---------------------------------------------------------------------------
 # Dependencias (campus 42: a menudo hay que instalar en --user o .venv)
@@ -458,10 +466,7 @@ def main() -> None:
     print("-" * 48)
     print()
 
-    imgs = SCRIPT_DIR / "imgs"
-    imgs.mkdir(parents=True, exist_ok=True)
-    # Copia en imgs/ (README) y en la raíz del ejercicio (trabajo diario).
-    plot_elbow(ks, inertias, chosen, imgs / "elbow_method.png")
+    # Un solo PNG en la raíz de ex04/ (evita generar el mismo gráfico dos veces).
     plot_elbow(ks, inertias, chosen, SCRIPT_DIR / "elbow_method.png")
     print("Proceso terminado.")
 

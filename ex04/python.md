@@ -288,4 +288,86 @@ Busca en consola:
 
 ---
 
+
+---
+
+<a id="sklearn-importable"></a>
+## 📦 Qué significa «scikit-learn importable» (menú `start.sh`)
+
+En la opción **Estado del entorno**, el asistente hace algo equivalente a:
+
+```bash
+python3 -c "import sklearn"
+```
+
+| Mensaje | Significado |
+|---------|-------------|
+| **✓ scikit-learn importable** | Python puede importar el paquete: `KMeans` y `StandardScaler` están disponibles. |
+| **⚠ Falta scikit-learn** | Ese `import` falló. Al ejecutar `elbow.py`, el propio script intentará `pip install --user scikit-learn`. |
+
+No es un requisito escrito en el PDF del subject: es un **aviso del menú** para no sorprenderte a mitad de ejecución. La entrega sigue siendo solo **`elbow.*`**.
+
+Tras la primera instalación correcta, el estado suele pasar de ⚠ a ✓.
+
+[↑ Volver al índice](#indice)
+
+---
+
+<a id="ref-ex05"></a>
+## 🔗 ¿Por qué se menciona EX05 si aún estamos en EX04?
+
+Es **normal y correcto**. No implica haber hecho ya el Clustering.
+
+- El subject de **EX04** pide elegir un número de clusters para targeting comercial.
+- El subject de **EX05** pide **al menos 4 grupos** (new, inactive, loyalty…).
+- Hablar de EX05 en EX04 es **orientación del itinerario**: el k que justificas aquí se usará después.
+- **No** hace falta tener `Clustering.*` escrito para defender el Elbow.
+- **No** conviene implementar el clustering completo dentro de EX04 (eso es EX05).
+
+En defensa puedes decir: *“Elijo k = 4 por el codo y porque el siguiente ejercicio pide ≥ 4 segmentos.”*
+
+[↑ Volver al índice](#indice)
+
+---
+
+<a id="k-detalle"></a>
+## 📐 k, inertia y codo — detalle técnico (repaso)
+
+### Fórmula de la inertia (WCSS)
+
+Para un particionado en *k* grupos, con centroide \(\mu_j\) del grupo *j*:
+
+\[
+\mathrm{WCSS}(k) = \sum_{j=1}^{k} \sum_{x \in C_j} \| x - \mu_j \|^2
+\]
+
+- Cada cliente *x* está en un solo grupo \(C_j\).
+- Se suman las distancias **al cuadrado** al centro de su grupo.
+- En scikit-learn eso es `model.inertia_` después de `fit`.
+
+### Por qué siempre baja al subir k
+
+Con más grupos, cada punto puede acercarse más a “su” centro. En el extremo, *k* = número de clientes → WCSS → 0. Por eso **no** se elige el *k* de mínima inertia, sino el de **mejor compromiso**.
+
+### Dónde está el codo (idea geométrica)
+
+1. Se calcula WCSS para *k* = 1, 2, …, 10.
+2. Se mira cómo cambia la **pendiente** de esa curva (en el código: segundas diferencias discretas).
+3. El codo ≈ donde la pendiente deja de caer con fuerza.
+4. En datos reales del warehouse, suele situarse hacia **3–4**.
+5. Si la heurística diera *k* &lt; 4, el script **sube a 4** para alinear con EX05.
+
+### Números típicos de una corrida (referencia)
+
+| k | Inertia (orden de magnitud) | Lectura |
+|---|----------------------------|---------|
+| 1 | ~3,3·10⁵ | Todo el mundo en un solo grupo |
+| 2–3 | Bajadas grandes | Aún compensa partir |
+| **4** | ~1,0·10⁵ | Codo práctico + suelo EX05 |
+| 5–10 | Bajadas cada vez menores | Más grupos, poco beneficio extra |
+
+Estos valores dependen del warehouse (p. ej. con febrero incluido); lo estable es **la forma** de la curva, no la cifra exacta.
+
+[↑ Volver al índice](#indice)
+
 *Module 2 – EX04 – Guía Python · sternero – 42 Málaga – 2026*
