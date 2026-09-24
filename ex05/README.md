@@ -130,6 +130,10 @@ SQL RFM (purchase / user_id)
   → gráfico 2: scatter Frequency × Monetary
 ```
 
+<p align="center">
+  <img src="./imgs/clustering_diagrama_flujo.jpg" alt="Piscine Data Science – Module 2 – Data Viz · Clustering" width="100%">
+</p>
+
 [↑ Volver al índice](#indice)
 
 ---
@@ -137,12 +141,23 @@ SQL RFM (purchase / user_id)
 <a id="ejecutar"></a>
 ## ▶️ Ejecutar
 
+<p align="center">
+  <img src="./imgs/clustering_python.png" alt="Piscine Data Science – Module 2 – Data Viz · Clustering" width="100%">
+</p>
+
 ```bash
 cd data_science_2_data_viz/ex05
 MPLBACKEND=Agg python3 Clustering.py
 python3 Clustering.py
 ./start.sh
 ```
+
+<p align="center">
+  <img src="./imgs/customers_per_cluster.png" alt="Piscine Data Science – Module 2 – Data Viz · Clustering" width="100%">
+</p>
+<p align="center">
+  <img src="./imgs/clusters_frequency_monetary.png" alt="Piscine Data Science – Module 2 – Data Viz · Clustering" width="100%">
+</p>
 
 [↑ Volver al índice](#indice)
 
@@ -190,4 +205,4 @@ python3 Clustering.py
 
 ---
 
-*Module 2 – EX05 – sternero – 42 Málaga – 2026*
+*Module 2 – EX05 – sternero – 42 Málaga – Octubre 2026*

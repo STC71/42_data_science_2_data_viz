@@ -43,7 +43,7 @@ print_header()
     clear
     echo
     echo -e "${CYAN}${BOLD}╔════════════════════════════════════════════════════════════╗${RESET}"
-    echo -e "${CYAN}${BOLD}║  Module 2 – Data Viz – EX05 Clustering                          ║${RESET}"
+    echo -e "${CYAN}${BOLD}║  Module 2 – Data Viz – EX05 Clustering                     ║${RESET}"
     echo -e "${CYAN}${BOLD}║  sternero – 42 Málaga                                      ║${RESET}"
     echo -e "${CYAN}${BOLD}╚════════════════════════════════════════════════════════════╝${RESET}"
     echo

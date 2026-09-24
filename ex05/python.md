@@ -170,4 +170,4 @@ No hace falta rehacer el Elbow dentro de este script: se reutiliza la lógica RF
 
 ---
 
-*Module 2 – EX05 – Guía Python · sternero – 42 Málaga – 2026*
+*Module 2 – EX05 – Guía Python · sternero – 42 Málaga – Octubre 2026*
