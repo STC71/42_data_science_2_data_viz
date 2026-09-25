@@ -1,12 +1,11 @@
 # 📊 Piscine Data Science – Module 2 – Data Viz
 
 <p align="center">
-  <strong>Visualización · reporting · clustering de clientes</strong><br>
-  <em>Training Piscine datascience – 2 · Version 1.00</em>
+  <img src="./imgs/banner_00.jpg" alt="Piscine Data Science – Module 2 – Training Piscine datascience – 2" width="100%">
 </p>
 
 <p align="center">
-  <em>sternero – 42 Málaga</em>
+  <strong>Visualización · reporting · clustering de clientes</strong><br>
 </p>
 
 ---
@@ -192,4 +191,4 @@ El PDF del subject muestra gráficos **sin** febrero. Con el warehouse completo 
 
 ---
 
-*sternero – 42 Málaga – Module 2 – Data Viz – 2026*
+*sternero – 42 Málaga – Module 2 – Data Viz – Octubre 2026*
