@@ -10,7 +10,7 @@ SUBJECT (idea del PDF – “My beautiful mustache”)
   • Analizar los valores de precio de los artículos comprados (purchase).
   • Calcular estadísticas tipo describe: count, mean, std, min, 25%, 50%, 75%, max.
   • Representar un box plot (“boîte à moustaches”).
-  • Luego: precio medio del panier (cesta) por usuario → mismas stats + box plot.
+  • Luego: precio medio de compra por usuario → mismas stats + box plot.
   • Turn-in directory : ex02/
   • Files to turn in  : mustache.*
 
@@ -234,9 +234,9 @@ WHERE event_type = 'purchase'
   AND price IS NOT NULL;
 """
 
-# Cesta por usuario: suma de precios de todas sus compras
+# Precio medio de los artículos comprados por usuario
 SQL_BASKET_PER_USER = """
-SELECT user_id, SUM(price) AS basket
+SELECT user_id, AVG(price) AS basket
 FROM customers
 WHERE event_type = 'purchase'
   AND price IS NOT NULL
@@ -255,7 +255,7 @@ def fetch_prices(conn) -> np.ndarray:
 
 
 def fetch_baskets(conn) -> np.ndarray:
-    """Vector 1D de total gastado por user_id (panier)."""
+    """Vector 1D del precio medio comprado por user_id."""
     with conn.cursor() as cur:
         cur.execute(SQL_BASKET_PER_USER)
         rows = cur.fetchall()
@@ -381,7 +381,7 @@ def main() -> None:
     stats_baskets = describe(baskets)
 
     print_describe("Item price (purchase) · ₳", stats_items)
-    print_describe("Basket total per user · ₳", stats_baskets)
+    print_describe("Average basket price per user · ₳", stats_baskets)
 
     plot_boxplot(
         prices,
@@ -393,8 +393,8 @@ def main() -> None:
     )
     plot_boxplot(
         baskets,
-        title="Box plot – average basket (total spend per user) (₳)",
-        ylabel="basket total (₳)",
+        title="Box plot – average basket price per user (₳)",
+        ylabel="average basket price (₳)",
         out_path=SCRIPT_DIR / "mustache_basket.png",
         horizontal=True,
         show_fliers=False,

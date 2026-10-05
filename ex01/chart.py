@@ -233,13 +233,14 @@ DATE_TO = "2023-03-01"  # exclusivo: incluye todo febrero
 # ---------------------------------------------------------------------------
 # Consultas (solo purchase, agregación en SQL)
 # ---------------------------------------------------------------------------
-# 1) Clientes (compras) por día
+# 1) Clientes distintos con compras por día
 SQL_CUSTOMERS_PER_DAY = f"""
 SELECT
     event_time::date AS day,
-    COUNT(*)        AS n_customers
+    COUNT(DISTINCT user_id) AS n_customers
 FROM customers
 WHERE event_type = 'purchase'
+  AND user_id IS NOT NULL
   AND event_time >= TIMESTAMP '{DATE_FROM}'
   AND event_time <  TIMESTAMP '{DATE_TO}'
 GROUP BY event_time::date
@@ -260,14 +261,16 @@ ORDER BY month;
 """
 
 # 3) Gasto medio por cliente y día
-#    average spend/customers ≈ SUM(price) / COUNT(*) por día
-#    (cada fila purchase = un ítem comprado; el PDF usa “customers” en el eje)
+#    average spend/customers = gasto total / clientes distintos con compra.
+#    Dividir por COUNT(*) mediría el precio medio de una línea, no el gasto
+#    medio de un cliente.
 SQL_AVG_SPEND_PER_DAY = f"""
 SELECT
     event_time::date AS day,
-    SUM(price) / NULLIF(COUNT(*), 0) AS avg_spend
+    SUM(price) / NULLIF(COUNT(DISTINCT user_id), 0) AS avg_spend
 FROM customers
 WHERE event_type = 'purchase'
+  AND user_id IS NOT NULL
   AND event_time >= TIMESTAMP '{DATE_FROM}'
   AND event_time <  TIMESTAMP '{DATE_TO}'
 GROUP BY event_time::date
@@ -294,7 +297,7 @@ def plot_charts(
     style_color = "#4C78A8"
     fill_color = "#4C78A8"
 
-    # --- Chart 1: customers per day (línea) ---
+    # --- Chart 1: distinct customers per day (línea) ---
     days = [r[0] for r in daily_customers]
     counts = [int(r[1]) for r in daily_customers]
 
@@ -302,7 +305,7 @@ def plot_charts(
     ax1.plot(days, counts, color=style_color, linewidth=1.2)
     ax1.set_ylabel("Number of customers")
     ax1.set_xlabel("")
-    ax1.set_title("Purchases per day (customers) · Oct 2022 – Feb 2023")
+    ax1.set_title("Customers with purchases per day · Oct 2022 – Feb 2023")
     ax1.grid(True, alpha=0.35)
     ax1.xaxis.set_major_formatter(mdates.DateFormatter("%b"))
     ax1.xaxis.set_major_locator(mdates.MonthLocator())

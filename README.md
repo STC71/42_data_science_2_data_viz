@@ -33,9 +33,9 @@ Conectar al **Data Warehouse del Module 01** (`customers`) y **mostrar** los dat
 
 | Bloque | Idea |
 |--------|------|
-| EX00–EX02 | Acciones en el sitio, compras en el tiempo, distribución de precios |
+| EX00–EX02 | Acciones en el sitio, clientes/compras en el tiempo, distribución de precios |
 | EX03 | Frequency y monetary (edificios) |
-| EX04 | Elbow → número de clusters |
+| EX04 | Elbow → número de clusters (selecciona `k=5`) |
 | EX05 | Clustering con etiquetas de negocio (≥ 4 grupos) |
 
 Todo el pipeline de gráficos usa **PostgreSQL** (`piscineds`) y, en la práctica, solo eventos `purchase` cuando el subject lo pide.
@@ -57,7 +57,8 @@ data_science_2_data_viz/
 ├── ex02/  mustache.*
 ├── ex03/  Building.*
 ├── ex04/  elbow.*
-└── ex05/  Clustering.*
+├── ex05/  Clustering.*
+└── evaluation.sh       ← guía interactiva de defensa
 ```
 
 Cada `ex0N/` incluye, además de la entrega:
@@ -140,6 +141,58 @@ Permite, sin sustituir las entregas:
 - Recordar qué fichero hay que entregar en cada `ex0N/`
 
 Cada ejercicio sigue teniendo su propio `ex0N/start.sh` más detallado.
+
+## 🧪 Evaluación guiada (`evaluation.sh`)
+
+La guía se basa en `en.subject.pdf` y `evaluation_en_2.pdf` y funciona desde
+cualquier directorio porque resuelve dinámicamente la ruta donde está ubicada.
+No sustituye la defensa oficial: ayuda a preparar el entorno, ejecutar los
+entregables y conservar las evidencias.
+
+```bash
+chmod +x evaluation.sh
+./evaluation.sh
+```
+
+Comprueba, con confirmación antes de ejecutar acciones:
+
+- estructura y entregables `pie.*`, `chart.*`, `mustache.*`, `Building.*`,
+  `elbow.*` y `Clustering.*`;
+- Docker, PostgreSQL y la tabla `customers` producida por Module 1;
+- patrones relevantes del código (`purchase`, estadísticas, `boxplot`,
+  barras, elbow, `StandardScaler`, `KMeans`) localizados dinámicamente, sin
+  depender de números de línea fijos. La revisión aparece justo al comenzar
+  cada EX, junto con su explicación, referencia al archivo y línea relevante y artefactos esperados;
+- ejecución opcional de cada script con `MPLBACKEND=Agg`, generación de PNG y
+  comandos reproducibles;
+- demostración visual de cada ejercicio y explicación del codo, el número de
+  clusters y el significado de los segmentos.
+
+La escala tiene criterios que no pueden aprobarse solo mirando archivos. Por
+eso la guía pregunta expresamente si se han mostrado:
+
+| Ejercicio | Evidencia de defensa |
+|-----------|----------------------|
+| EX00 | pie chart conectado al warehouse |
+| EX01 | tres gráficos con solo `purchase`, clientes distintos por día y gasto medio por cliente, desde octubre hasta febrero |
+| EX02 | estadísticas, box plot de precios, box plot de cesta y explicación |
+| EX03 | dos bar charts equivalentes al subject |
+| EX04 | curva elbow y justificación de `k` |
+| EX05 | el mismo `k` que EX04, al menos dos gráficos e interpretación de cada grupo |
+
+La coherencia EX04 → EX05 se comprueba después de ejecutar ambos ejercicios:
+primero se explica la curva y la elección de `k`, y después se verifica que EX05
+usa exactamente el mismo número. En este proyecto se ha elegido `k=5` porque
+la curva se suaviza en esa zona y permite los cinco segmentos de negocio
+`new`, `inactive`, `silver`, `gold` y `platinum`. El mínimo de cuatro procede
+del subject y exige al menos separar clientes nuevos, inactivos y perfiles de
+fidelidad; no convierte `k=4` en una elección obligatoria.
+
+El PNG existente no se considera por sí solo una prueba de ejecución correcta:
+el evaluador debe abrirlo o mostrar la ventana y explicar lo que observa.
+Después de cada Enter se limpia la terminal y se indica que se trata de una
+continuación, no de un reinicio. El resultado verde es orientativo y no
+sustituye la decisión oficial de la escala.
 
 [↑ Volver al índice](#indice)
 

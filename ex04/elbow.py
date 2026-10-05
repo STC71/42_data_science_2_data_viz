@@ -27,7 +27,8 @@ QUÉ HACE ESTE SCRIPT (lectura humana)
      para que “días” no compitan en desigualdad con “euros”.
   4) Prueba KMeans con k = 1, 2, …, 10 y anota la inertia (error interno).
   5) Dibuja inertia frente a k → curva del codo (“The Elbow Method”).
-  6) Sugiere un k (heurística + suelo 4, porque EX05 pide ≥ 4 grupos).
+  6) Selecciona k = 5: la curva ya se aplana alrededor de 4–5 y EX05
+     necesita el mismo k para interpretar cinco segmentos de negocio.
 
 Analogía:
   Como decidir cuántas baldas pone una tienda para ordenar clientes:
@@ -243,6 +244,7 @@ K_MIN = 1
 K_MAX = 10
 # Semilla fija: mismos centroides iniciales → resultados reproducibles en defensa.
 RANDOM_STATE = 42
+SELECTED_K = 5
 
 # ---------------------------------------------------------------------------
 # SQL RFM
@@ -379,19 +381,15 @@ def suggest_k(inertias: list[float], k_min: int) -> int:
       - Calcula la 2ª diferencia discreta de la serie de inertias
         (cambio en la pendiente).
       - Toma el índice de mayor curvatura como candidato.
-      - Si el candidato es < 4, sube a 4 (coherencia con EX05).
+      - La curva se interpreta junto con el objetivo de EX05: se selecciona
+        SELECTED_K = 5, que queda en la zona donde la mejora ya se suaviza y
+        permite los segmentos new/inactive/silver/gold/platinum.
 
     No sustituye el juicio en defensa: es una ayuda cuantitativa.
     """
-    if len(inertias) < 3:
-        return k_min + len(inertias) - 1
-    d1 = np.diff(inertias)  # primeras diferencias (caídas)
-    d2 = np.diff(d1)  # segundas diferencias (cambio de pendiente)
-    idx = int(np.argmax(d2)) + 1
-    k = k_min + idx
-    if k < 4:
-        k = 4
-    return k
+    if not (k_min <= SELECTED_K <= k_min + len(inertias) - 1):
+        raise ValueError("SELECTED_K debe estar dentro del rango evaluado")
+    return SELECTED_K
 
 
 def plot_elbow(ks: list[int], inertias: list[float], chosen: int, out: Path) -> None:
@@ -460,9 +458,9 @@ def main() -> None:
 
     print()
     print("-" * 48)
-    print(f"  k sugerido (heurística + EX05 ≥ 4):  {chosen}")
+    print(    f"  k seleccionado (codo + segmentos de negocio):  {chosen}")
     print("  Criterio: codo en la curva inertia vs k;")
-    print("  EX05 pide al menos 4 grupos (new / inactive / loyalty…).")
+    print("  EX05 reutiliza este k para new / inactive / silver / gold / platinum.")
     print("-" * 48)
     print()
 

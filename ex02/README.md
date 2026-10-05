@@ -34,7 +34,7 @@ Subject (**My beautiful mustache**):
 | Datos | Precios de **purchase** en el warehouse |
 | Stats | count, mean, std, min, **25%**, **50%**, **75%**, max |
 | Visual | **Box plot** (bigotes / moustaches) |
-| Segundo análisis | Precio de la **cesta media** (total por `user_id`) + box plot |
+| Segundo análisis | Precio medio de la **cesta por `user_id`** + box plot |
 
 [↑ Volver al índice](#indice)
 
@@ -84,7 +84,7 @@ Sobre ese vector: **describe** + box plot horizontal.
 ### 2) Cesta por usuario
 
 ```sql
-SELECT user_id, SUM(price) AS basket
+SELECT user_id, AVG(price) AS basket
 FROM customers
 WHERE event_type = 'purchase' AND price IS NOT NULL
 GROUP BY user_id;
@@ -93,7 +93,8 @@ GROUP BY user_id;
   <img src="./imgs/box_plot_average.png" alt="Piscine Data Science – Module 2 – Data Viz · estadísticas de precio + box plots (boîte à moustaches) width="100%">
 </p>
 
-Mismo **describe** + segundo box plot.
+El valor representa el precio medio de los artículos comprados por cada usuario.
+Sobre ese vector se imprime el mismo **describe** y se genera el segundo box plot.
 
 Los outliers se ocultan por defecto (`showfliers=False`) para que el dibujo se parezca al del PDF (caja y bigotes legibles).
 

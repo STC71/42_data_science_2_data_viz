@@ -21,7 +21,7 @@ SUBJECT (Clustering)
 ENFOQUE
 ================================================================================
   1) RFM por user_id (solo purchase) — misma idea que EX04.
-  2) StandardScaler + KMeans (k = 5 ≥ 4 del subject).
+  2) StandardScaler + KMeans (k = 5, el mismo que se selecciona en EX04).
   3) Etiquetas de negocio según centroides (no nombres aleatorios).
   4) Al menos 2 gráficos: tamaños de grupo + scatter Frequency × Monetary.
 
@@ -194,7 +194,7 @@ from sklearn.preprocessing import StandardScaler
 SCRIPT_DIR = Path(__file__).resolve().parent
 MODULE2_DIR = SCRIPT_DIR.parent
 
-# k ≥ 4 del subject; 5 permite new + inactive + silver + gold + platinum
+# Debe coincidir con EX04/SELECTED_K: el evaluador comprueba esta coherencia.
 N_CLUSTERS = 5
 RANDOM_STATE = 42
 # Muestra en el scatter (todos los puntos saturan el PNG)

@@ -79,7 +79,8 @@ PNG generados (raíz de `ex05/`):
 
 - Module 0: PostgreSQL Up · Module 1: `customers`  
 - Python: `psycopg2`, `matplotlib`, `numpy`, **`scikit-learn`**  
-- EX04 ayuda a justificar **k ≥ 4** (aquí usamos **k = 5** para los 5 carteles del subject)
+- EX04 selecciona **k = 5**; EX05 reutiliza exactamente ese valor para los cinco
+  segmentos de negocio.
 
 [↑ Volver al índice](#indice)
 
@@ -92,7 +93,7 @@ PNG generados (raíz de `ex05/`):
 |------------|-----------------|
 | ¿Cuántos grupos? | ¿Quién va a cada grupo? |
 | Curva inertia | Etiquetas + gráficos de segmentos |
-| k sugerido ≥ 4 | k = 5 (new, inactive, silver, gold, platinum) |
+| k sugerido = 5 | k = 5 (new, inactive, silver, gold, platinum) |
 
 [↑ Volver al índice](#indice)
 

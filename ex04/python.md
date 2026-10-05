@@ -324,7 +324,7 @@ Es **normal y correcto**. No implica haber hecho ya el Clustering.
 - **No** hace falta tener `Clustering.*` escrito para defender el Elbow.
 - **No** conviene implementar el clustering completo dentro de EX04 (eso es EX05).
 
-En defensa puedes decir: *“Elijo k = 4 por el codo y porque el siguiente ejercicio pide ≥ 4 segmentos.”*
+En defensa puedes decir: *“Elijo k = 5 porque la mejora ya se suaviza en esa zona y el siguiente ejercicio reutiliza cinco segmentos comerciales.”*
 
 [↑ Volver al índice](#indice)
 
@@ -355,7 +355,8 @@ Con más grupos, cada punto puede acercarse más a “su” centro. En el extrem
 2. Se mira cómo cambia la **pendiente** de esa curva (en el código: segundas diferencias discretas).
 3. El codo ≈ donde la pendiente deja de caer con fuerza.
 4. En datos reales del warehouse, suele situarse hacia **3–4**.
-5. Si la heurística diera *k* &lt; 4, el script **sube a 4** para alinear con EX05.
+5. El script selecciona `k = 5` dentro del intervalo evaluado para que EX05
+   pueda reutilizar exactamente el mismo número de clusters.
 
 ### Números típicos de una corrida (referencia)
 

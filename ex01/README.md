@@ -105,7 +105,7 @@ docker exec -it postgres_piscineds \
 |---|------|-----------|-------------------------|
 | 1 | **Línea** | Compras (filas `purchase`) por **día** | Number of customers |
 | 2 | **Barras** | Suma de `price` por **mes** / 1 000 000 | total sales in million of ₳ |
-| 3 | **Área** | `SUM(price)/COUNT(*)` por **día** | average spend/customers in ₳ |
+| 3 | **Área** | `SUM(price)/COUNT(DISTINCT user_id)` por **día** | average spend/customers in ₳ |
 
 La agregación se hace **en SQL** (no se cargan millones de filas en Python).
 

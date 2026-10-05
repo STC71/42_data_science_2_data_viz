@@ -341,7 +341,7 @@ DATE_TO = "2023-03-01"  # exclusivo
 ```sql
 SELECT
     event_time::date AS day,
-    COUNT(*)        AS n_customers
+    COUNT(DISTINCT user_id) AS n_customers
 FROM customers
 WHERE event_type = 'purchase'
   AND event_time >= TIMESTAMP '2022-10-01'
@@ -373,7 +373,7 @@ En Python se divide por `1_000_000` para el eje *total sales in million of ₳*.
 ```sql
 SELECT
     event_time::date AS day,
-    SUM(price) / NULLIF(COUNT(*), 0) AS avg_spend
+    SUM(price) / NULLIF(COUNT(DISTINCT user_id), 0) AS avg_spend
 FROM customers
 WHERE event_type = 'purchase'
   AND event_time >= TIMESTAMP '2022-10-01'
@@ -382,7 +382,8 @@ GROUP BY event_time::date
 ORDER BY day;
 ```
 
-`NULLIF(COUNT(*), 0)` evita división por cero (aunque un día sin filas no aparecerá por el `GROUP BY`).
+`NULLIF(COUNT(DISTINCT user_id), 0)` evita división por cero (aunque un día sin
+filas no aparecerá por el `GROUP BY`).
 
 **Por qué no traer todas las filas a pandas:** con ~1 M de purchases, el `GROUP BY` en el servidor es más barato y fiel al estilo “agrega en el warehouse” de la piscine.
 
@@ -464,7 +465,7 @@ La columna `price` del CSV/warehouse **ya** está en esa unidad ficticia de la c
 En los gráficos:
 
 - Barras: *million of ₳* → `SUM(price) / 1e6`.
-- Área: *average spend … in ₳* → media de `price`.
+- Área: *average spend … in ₳* → gasto total dividido entre clientes distintos.
 
 Usar el símbolo ₳ en el eje es coherente con el PDF; no es obligatorio para la nota, pero ayuda en defensa.
 
@@ -558,7 +559,8 @@ MPLBACKEND=Agg python3 chart.py
 
 1. ¿Qué cambia en el gráfico 1 si quitas el filtro `event_type = 'purchase'`?  
 2. ¿Por qué `DATE_TO = "2023-03-01"` y no `"2023-02-28"`?  
-3. Escribe en una frase la diferencia entre `SUM(price)` mensual y `SUM(price)/COUNT(*)` diario.  
+3. Escribe en una frase la diferencia entre `SUM(price)` mensual y
+   `SUM(price)/COUNT(DISTINCT user_id)` diario.
 4. Si el evaluador pregunta “¿dónde está febrero?”, ¿qué comando `psql` muestras?
 
 *(Respuestas orientativas: 1) mezclarías views/cart y el eje ya no sería “compras”. 2) límite exclusivo limpio. 3) total facturado vs ticket medio. 4) el `GROUP BY month` del bloque Ejecutar.)*

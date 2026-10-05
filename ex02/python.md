@@ -48,7 +48,7 @@ Si ya hiciste EX00/EX01, puedes ir a la **Parte B**. La Parte A no asume estadí
 
 Al final, en defensa:
 
-> “Calculo cuartiles y media de los precios `purchase`, dibujo un box plot, y repito el análisis sobre la cesta total por `user_id`.”
+> “Calculo cuartiles y media de los precios `purchase`, dibujo un box plot, y repito el análisis sobre el precio medio de la cesta por `user_id`.”
 
 [↑ Volver al índice](#indice)
 
@@ -178,7 +178,7 @@ prices = np.fromiter((float(r[0]) for r in rows), dtype=float, count=len(rows))
 | Analizar precios de lo **comprado** | `event_type = 'purchase'` |
 | Estadísticos tipo describe | count … max |
 | **Box plot** | `ax.boxplot(...)` |
-| Análisis del **panier** | `SUM(price) GROUP BY user_id` |
+| Análisis del **panier** | `AVG(price) GROUP BY user_id` |
 | Entrega | `ex02/mustache.*` |
 
 [↑ Volver al índice](#indice)
@@ -244,7 +244,7 @@ WHERE event_type = 'purchase'
 ## 2️⃣ Consulta 2 – panier por usuario
 
 ```sql
-SELECT user_id, SUM(price) AS basket
+SELECT user_id, AVG(price) AS basket
 FROM customers
 WHERE event_type = 'purchase'
   AND price IS NOT NULL
@@ -362,7 +362,7 @@ Comprueba:
 1. Fuente: **`customers`**, solo **`purchase`**.  
 2. Stats con NumPy (cuartiles + media + std).  
 3. Box plot = distribución del **precio unitario**.  
-4. Segundo paso: **`SUM(price) GROUP BY user_id`** = panier.  
+4. Segundo paso: **`AVG(price) GROUP BY user_id`** = precio medio de la cesta.
 5. Otro describe + otro box plot.  
 6. Fliers ocultos para legibilidad; números exactos en la tabla.
 

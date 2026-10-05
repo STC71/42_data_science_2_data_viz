@@ -159,7 +159,8 @@ inertia (error interno)
 4. Para k = 1, 2, …, 10:
       crear k grupos (KMeans) y guardar la inertia
 5. Dibujar inertia frente a k  →  “The Elbow Method”
-6. Proponer un k (heurística + recuerdo de que EX05 pide ≥ 4)
+6. Seleccionar un k en la zona donde el codo se aplana; este proyecto selecciona `k=5`
+   y EX05 debe reutilizar exactamente ese valor.
 ```
 
 <p align="center">
@@ -225,7 +226,8 @@ Resumen operativo de una corrida típica (110 518 clientes RFM en el warehouse
 
 > RFM por `user_id` (solo `purchase`), StandardScaler, KMeans k=1…10.  
 > La inertia cae fuerte hasta **~3–4** y luego se aplana.  
-> Elijo **k = 4** por el codo y porque EX05 pide **al menos 4 grupos** (new / inactive / loyalty…).
+> Elijo **k = 5** porque la curva ya se aplana en esa zona y permite los cinco
+> segmentos de negocio de EX05: new, inactive, silver, gold y platinum.
 
 ### Por qué este argumento encaja con el subject
 
@@ -233,7 +235,7 @@ Resumen operativo de una corrida típica (110 518 clientes RFM en el warehouse
 2. **RFM** — Tres preguntas de negocio: ¿hace cuánto compró?, ¿cuántas veces?, ¿cuánto gastó?
 3. **Escala** — Sin `StandardScaler`, Monetary (₳) dominaría frente a Frequency/Recency.
 4. **Curva** — Más clusters bajan siempre la inertia; el **codo** es donde la mejora marginal se suaviza (en la práctica hacia 3–4).
-5. **k = 4** — Compromiso entre el codo y el subject de EX05 (≥ 4 segmentos comerciales para e-mail).
+5. **k = 5** — Compromiso entre el codo y los cinco segmentos comerciales de EX05.
 
 El PNG de la curva queda en la raíz del ejercicio: [`elbow_method.png`](./elbow_method.png).
 
