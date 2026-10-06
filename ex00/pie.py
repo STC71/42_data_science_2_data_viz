@@ -4,16 +4,6 @@
 from __future__ import annotations
 
 """
-La líena 1:
-!/usr/bin/env python3 es una línea shebang que indica al sistema operativo que
-este script debe ejecutarse usando el intérprete de Python 3.
-
-La línea 2:
-`# -*- coding: utf-8 -*-` especifica que el archivo está codificado en UTF-8,
-lo que permite el uso de caracteres especiales en el código y los comentarios.
-"""
-
-"""
 EX00 – pie.py
 Module 2 – Data Viz – Piscine Data Science
 
