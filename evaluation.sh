@@ -53,11 +53,10 @@ DB_USER="${POSTGRES_USER:-$(id -un 2>/dev/null || whoami)}"
 # ============================================================================
 header() {
   clear 2>/dev/null || true
-  echo -e "${BOLD}${YELLOW}"
+  echo -e "${BOLD}${BLUE}"
   echo "╔══════════════════════════════════════════════════════════════════╗"
   echo "║  DATA SCIENCE 2 – Data Viz · DEFENSA / EVALUACIÓN                ║"
   echo "║  Hoja: /PROJECTS/DATA-SCIENCE-2                                  ║"
-  echo "║  sternero – 42 Málaga – Octubre 2026                             ║"
   echo "╚══════════════════════════════════════════════════════════════════╝"
   echo -e "${RESET}"
   echo -e "  ${DIM}Repo: ${SCRIPT_DIR}${RESET}"
@@ -356,92 +355,137 @@ check_environment() {
 # ============================================================================
 # AYUDAS: revisión de código + ejecución
 # ============================================================================
+
+# Filtra líneas de comentario / docstring basura / tests de humo de dependencias
+_is_noise_line() {
+  local code="$1"
+  # Comentario Python/SQL puro
+  if [[ "$code" =~ ^[[:space:]]*# ]]; then return 0; fi
+  # Docstrings sueltas o viñetas de documentación
+  if [[ "$code" =~ ^[[:space:]]*\"\"\" ]]; then return 0; fi
+  if [[ "$code" =~ ^[[:space:]]*\'\'\' ]]; then return 0; fi
+  if [[ "$code" =~ ^[[:space:]]*\* ]]; then return 0; fi
+  # Texto tipo subject en comentarios ya filtrados; también líneas solo con strings de ayuda
+  if [[ "$code" =~ You\ have\ to\ connect ]]; then return 0; fi
+  if [[ "$code" =~ Garantiza\ psycopg2 ]]; then return 0; fi
+  if [[ "$code" =~ pip\ install ]]; then return 0; fi
+  if [[ "$code" =~ psycopg2-binary ]]; then return 0; fi
+  # Tests de humo (no son el gráfico real del subject)
+  if [[ "$code" =~ pie\(\[1,\ *2,\ *3\] ]]; then return 0; fi
+  if [[ "$code" =~ boxplot\(\[1,\ *2,\ *3 ]]; then return 0; fi
+  if [[ "$code" =~ bar\(\[1,\ *2,\ *3\] ]]; then return 0; fi
+  if [[ "$code" =~ KMeans\(n_clusters=2 ]]; then return 0; fi
+  return 1
+}
+
 explain_match() {
   local match="$1"
   local line="${match%%:*}"
   local code="${match#*:}"
-  echo -e "      ${YELLOW}${BOLD}línea $line:${RESET} ${DIM}$code${RESET}"
+  # recortar espacios extremos para mostrar
+  code="${code#"${code%%[![:space:]]*}"}"
+  echo -e "      ${YELLOW}${BOLD}línea $line:${RESET} ${DIM}${code:0:100}${RESET}"
   case "$code" in
-    *psycopg2*|*connect*)
-      echo -e "      ${CYAN}↳${RESET} Abre la conexión con PostgreSQL (el Data Warehouse)."
+    *psycopg2.connect*)
+      echo -e "      ${CYAN}↳${RESET} Conexión real a PostgreSQL (Data Warehouse)."
       ;;
-    *GROUP\ BY*|*group\ by*|*event_type*)
-      if echo "$code" | grep -qi purchase; then
-        echo -e "      ${CYAN}↳${RESET} Relacionado con event_type / purchase o agrupación."
-      else
-        echo -e "      ${CYAN}↳${RESET} Agrupa o filtra por tipo de evento."
-      fi
+    *cur.execute*|*cursor*execute*)
+      echo -e "      ${CYAN}↳${RESET} Ejecuta la consulta SQL en la BD."
       ;;
-    *COUNT*DISTINCT*|*user_id*)
-      echo -e "      ${CYAN}↳${RESET} Cuenta clientes distintos o usa user_id."
+    *SELECT*|*FROM\ customers*|*FROM\ public.customers*)
+      echo -e "      ${CYAN}↳${RESET} Consulta SQL sobre los datos del warehouse."
       ;;
-    *purchase*)
-      echo -e "      ${CYAN}↳${RESET} Filtra o trabaja con compras (purchase)."
+    *GROUP\ BY*|*group\ by*)
+      echo -e "      ${CYAN}↳${RESET} Agrupación SQL (conteos / totales por clave)."
+      ;;
+    *WHERE\ event_type*purchase*|*event_type\ =\ \'purchase\'*)
+      echo -e "      ${CYAN}↳${RESET} Filtro solo compras (purchase)."
       ;;
     *date_trunc*)
-      echo -e "      ${CYAN}↳${RESET} Agrupa fechas por día o por mes."
+      echo -e "      ${CYAN}↳${RESET} Agregación temporal (día/mes)."
       ;;
-    *SUM*|*sum*)
-      echo -e "      ${CYAN}↳${RESET} Suma importes (ventas)."
+    *ax.pie*|*plt.pie*)
+      echo -e "      ${CYAN}↳${RESET} Dibuja el pie chart con los datos obtenidos."
       ;;
-    *AVG*|*avg*)
-      echo -e "      ${CYAN}↳${RESET} Media de precios / cesta."
+    *boxplot*|*box\ plot*)
+      echo -e "      ${CYAN}↳${RESET} Diagrama de caja (mustache) con datos reales."
       ;;
-    *percentile*|*quantile*|*median*)
-      echo -e "      ${CYAN}↳${RESET} Cuartiles / mediana."
-      ;;
-    *pie*)
-      echo -e "      ${CYAN}↳${RESET} Dibuja el gráfico de sectores (tarta)."
-      ;;
-    *boxplot*|*box*)
-      echo -e "      ${CYAN}↳${RESET} Dibuja un diagrama de caja (mustache)."
-      ;;
-    *bar*)
-      echo -e "      ${CYAN}↳${RESET} Dibuja barras (edificios de frecuencia/monetary)."
+    *ax.bar*|*plt.bar*)
+      echo -e "      ${CYAN}↳${RESET} Gráfico de barras (frecuencia / monetary / clusters)."
       ;;
     *KMeans*)
-      echo -e "      ${CYAN}↳${RESET} Algoritmo de clustering K-Means."
+      echo -e "      ${CYAN}↳${RESET} Clustering K-Means (no el test de import)."
       ;;
     *StandardScaler*)
-      echo -e "      ${CYAN}↳${RESET} Normaliza variables antes de agrupar."
+      echo -e "      ${CYAN}↳${RESET} Escalado de variables antes de agrupar."
       ;;
     *inertia*)
-      echo -e "      ${CYAN}↳${RESET} Inertia/WCSS de la curva elbow."
+      echo -e "      ${CYAN}↳${RESET} Inertia/WCSS para la curva elbow."
       ;;
     *savefig*)
-      echo -e "      ${CYAN}↳${RESET} Guarda el gráfico en PNG."
+      echo -e "      ${CYAN}↳${RESET} Guarda el PNG del gráfico."
+      ;;
+    *import\ psycopg2*)
+      echo -e "      ${CYAN}↳${RESET} Import del driver de PostgreSQL."
       ;;
     *)
-      echo -e "      ${CYAN}↳${RESET} Evidencia relacionada con el criterio."
+      echo -e "      ${CYAN}↳${RESET} Evidencia de código ejecutable relacionada con el criterio."
       ;;
   esac
 }
 
+# dynamic_check FILE PATTERN1 [PATTERN2 ...]
+# Cada patrón se busca por separado; se muestran solo líneas de CÓDIGO (no comentarios).
+# Basta con que al menos un patrón tenga un hit de código real.
 dynamic_check() {
   local file="$1"
-  local pattern="$2"
-  local description="$3"
+  shift
+  local description="$1"
+  shift
+  local patterns=("$@")
+
   if [[ ! -f "$SCRIPT_DIR/$file" ]]; then
     fail "Falta $file"
     return 1
   fi
   echo -e "    ${BOLD}Archivo:${RESET} $file"
-  info "Qué buscamos: $description"
-  local matches
-  matches="$(grep -nE "$pattern" "$SCRIPT_DIR/$file" 2>/dev/null | head -12 || true)"
-  if [[ -n "$matches" ]]; then
-    info "Evidencia en el código:"
+  info "Qué buscamos (solo código ejecutable, no comentarios): $description"
+
+  local any=0
+  local pat matches line code show_count
+  for pat in "${patterns[@]}"; do
+    matches="$(grep -nE "$pat" "$SCRIPT_DIR/$file" 2>/dev/null || true)"
+    [[ -z "$matches" ]] && continue
+    show_count=0
     while IFS= read -r match; do
-      [[ -n "$match" ]] && explain_match "$match"
+      [[ -z "$match" ]] && continue
+      line="${match%%:*}"
+      code="${match#*:}"
+      if _is_noise_line "$code"; then
+        continue
+      fi
+      if [[ $show_count -eq 0 && $any -eq 0 ]]; then
+        info "Evidencia en el código (se omiten comentarios y tests de humo):"
+      fi
+      explain_match "$match"
+      any=1
+      show_count=$((show_count + 1))
+      # Máximo 3 hits útiles por patrón para no saturar
+      [[ $show_count -ge 3 ]] && break
     done <<< "$matches"
+  done
+
+  if [[ $any -eq 1 ]]; then
     ok "El código contiene lógica alineada con el criterio"
     return 0
   else
-    warn "No se encontró el patrón esperado (puede usar otra API equivalente)"
-    note "El evaluador debe leer el fichero y decidir si cumple el espíritu del subject"
+    warn "No se encontró código ejecutable con esos patrones (¿otra API equivalente?)"
+    note "Abrid el fichero y comprobad a mano el espíritu del subject"
+    show_cmd "less -N $SCRIPT_DIR/$file"
     return 1
   fi
 }
+
 
 offer_run() {
   local title="$1"
@@ -574,8 +618,13 @@ check_ex00() {
 
   subsection "Código"
   dynamic_check "ex00/pie.py" \
-    "psycopg2|connect|GROUP BY|event_type|pie\(|savefig" \
-    "Conexión al warehouse + conteo por event_type + dibujo pie"
+    "Conexión warehouse + SQL GROUP BY event_type + pie + savefig" \
+    "psycopg2\.connect" \
+    "cur\.execute" \
+    "SELECT[[:space:]]+event_type" \
+    "GROUP BY event_type" \
+    "ax\.pie\(" \
+    "savefig\("
 
   subsection "Docker (solo si aplica)"
   show_cmd "docker ps"
@@ -605,8 +654,12 @@ check_ex01() {
 
   subsection "Código"
   dynamic_check "ex01/chart.py" \
-    "purchase|COUNT|DISTINCT|user_id|date_trunc|SUM|AVG|savefig" \
-    "Filtro purchase + clientes distintos + agregaciones temporales"
+    "Filtro purchase + agregaciones + 3 savefig" \
+    "event_type[[:space:]]*=[[:space:]]*'purchase'" \
+    "psycopg2\.connect" \
+    "cur\.execute" \
+    "date_trunc|event_time::date" \
+    "savefig\("
 
   subsection "Ejecución"
   run_python_exercise "EX01" "ex01/chart.py" \
@@ -633,8 +686,13 @@ check_ex02() {
 
   subsection "Código"
   dynamic_check "ex02/mustache.py" \
-    "purchase|mean|median|percentile|quantile|boxplot|AVG|savefig" \
-    "Estadísticas de precio + box plots (ítem y/o cesta)"
+    "purchase + stats + boxplot real + savefig" \
+    "event_type[[:space:]]*=[[:space:]]*'purchase'" \
+    "psycopg2\.connect" \
+    "cur\.execute" \
+    "np\.percentile|quantile|median|\.mean\(" \
+    "ax\.boxplot\(|boxplot\(" \
+    "savefig\("
 
   subsection "Ejecución"
   run_python_exercise "EX02" "ex02/mustache.py" \
@@ -667,8 +725,12 @@ check_ex03() {
 
   subsection "Código"
   dynamic_check "ex03/Building.py" \
-    "purchase|frequency|monetary|bar\(|savefig|COUNT|SUM" \
-    "Histogramas/barras de frecuencia de pedidos y gasto"
+    "purchase + barras frecuencia/monetary + savefig" \
+    "event_type[[:space:]]*=[[:space:]]*'purchase'" \
+    "psycopg2\.connect|cur\.execute" \
+    "COUNT\(\*\)|SUM\(price\)" \
+    "ax\.bar\(" \
+    "savefig\("
 
   subsection "Ejecución"
   run_python_exercise "EX03" "ex03/Building.py" \
@@ -695,8 +757,13 @@ check_ex04() {
 
   subsection "Código"
   dynamic_check "ex04/elbow.py" \
-    "KMeans|inertia|StandardScaler|SELECTED_K|K_MIN|K_MAX|savefig" \
-    "RFM/features + KMeans para varios k + curva de inertia"
+    "RFM + StandardScaler + KMeans + inertia + savefig" \
+    "psycopg2\.connect|cur\.execute" \
+    "StandardScaler" \
+    "KMeans\(" \
+    "inertia_" \
+    "SELECTED_K" \
+    "savefig\("
 
   subsection "Ejecución"
   run_python_exercise "EX04" "ex04/elbow.py" "elbow_method.png"
@@ -734,8 +801,12 @@ check_ex05() {
 
   subsection "Código"
   dynamic_check "ex05/Clustering.py" \
-    "KMeans|StandardScaler|n_clusters|N_CLUSTERS|savefig|RFM|cluster" \
-    "Clustering + gráficos de segmentos"
+    "RFM + StandardScaler + KMeans\(k\) + ≥2 savefig" \
+    "psycopg2\.connect|cur\.execute" \
+    "StandardScaler" \
+    "KMeans\(" \
+    "N_CLUSTERS" \
+    "savefig\("
 
   subsection "Ejecución"
   run_python_exercise "EX05" "ex05/Clustering.py" \
