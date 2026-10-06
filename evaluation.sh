@@ -53,10 +53,12 @@ DB_USER="${POSTGRES_USER:-$(id -un 2>/dev/null || whoami)}"
 # ============================================================================
 header() {
   clear 2>/dev/null || true
-  echo -e "${BOLD}${BLUE}"
+  echo -e "${BOLD}${YELLOW}"
   echo "╔══════════════════════════════════════════════════════════════════╗"
   echo "║  DATA SCIENCE 2 – Data Viz · DEFENSA / EVALUACIÓN                ║"
-  echo "║  Hoja: /PROJECTS/DATA-SCIENCE-2                                  ║"
+  echo "║  Hoja : /PROJECTS/DATA-SCIENCE-2                                 ║"
+  echo "║  Guía : evaluation.sh (NO es entregable ni parte de la nota)     ║"
+  echo "║  Autor: sternero – 42 Málaga – Octubre 2026                      ║"
   echo "╚══════════════════════════════════════════════════════════════════╝"
   echo -e "${RESET}"
   echo -e "  ${DIM}Repo: ${SCRIPT_DIR}${RESET}"
