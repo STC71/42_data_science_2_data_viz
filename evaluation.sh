@@ -56,9 +56,9 @@ header() {
   echo -e "${BOLD}${YELLOW}"
   echo "╔══════════════════════════════════════════════════════════════════╗"
   echo "║  DATA SCIENCE 2 – Data Viz · DEFENSA / EVALUACIÓN                ║"
-  echo "║  Hoja : /PROJECTS/DATA-SCIENCE-2                                 ║"
-  echo "║  Guía : evaluation.sh (NO es entregable ni parte de la nota)     ║"
-  echo "║  Autor: sternero – 42 Málaga – Octubre 2026                      ║"
+  echo "║  Hoja: /PROJECTS/DATA-SCIENCE-2                                  ║"
+  echo "║  Guía: evaluation.sh (NO es entregable ni parte de la nota)      ║"
+  echo "║  sternero – 42 Málaga – Octubre 2026                             ║"
   echo "╚══════════════════════════════════════════════════════════════════╝"
   echo -e "${RESET}"
   echo -e "  ${DIM}Repo: ${SCRIPT_DIR}${RESET}"
@@ -207,7 +207,7 @@ preamble() {
   echo -e "  ${BOLD}Recordatorio para el evaluador:${RESET}"
   note "Solo evaluar lo que está en el Git del estudiante"
   note "git clone en carpeta vacía; comprobar que el repo es el suyo"
-  note "Revisar aliases raros si algo no cuadra"
+  note "Revisar alias raros si algo no cuadra"
   note "Si no has hecho este módulo, lee el subject completo antes"
   note "Flags: empty / incomplete / cheat / crash / concern / forbidden"
   note "El programa no debe morir de forma inesperada (crash → nota 0)"
@@ -509,6 +509,191 @@ offer_run() {
   done
 }
 
+
+# ---------------------------------------------------------------------------
+# Explicaciones didácticas de cada gráfico (auto y manual)
+# ---------------------------------------------------------------------------
+explain_artifact() {
+  local png="$1"
+  local base
+  base="$(basename "$png")"
+  echo
+  echo -e "  ${BOLD}${CYAN}📐 ¿Qué estamos viendo? → ${base}${RESET}"
+  case "$base" in
+    pie_chart.png)
+      echo -e "  ${BOLD}1) Qué datos${RESET}"
+      ctx "Cada evento de la tabla customers (Module 1) tiene un event_type:"
+      ctx "view, cart, remove_from_cart, purchase (y los que existan en la BD)."
+      ctx "Se cuenta CUÁNTOS eventos hay de cada tipo (COUNT + GROUP BY en SQL)."
+      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
+      ctx "Un círculo (pie / «tarta») dividido en sectores."
+      ctx "El tamaño de cada porción = proporción sobre el total de eventos (suma 100 %)."
+      ctx "Suele ir con colores distintos y etiquetas o leyenda con el nombre del tipo."
+      echo -e "  ${BOLD}3) Por qué así${RESET}"
+      ctx "Cuando la pregunta es «¿qué parte del total es cada categoría?», el pie es natural:"
+      ctx "el ojo compara áreas mejor que una lista de millones de filas."
+      ctx "No sirve para evolucionar en el tiempo (eso son las líneas de EX01)."
+      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
+      ctx "view suele ser la porción más grande; purchase la más pequeña."
+      ctx "Si el gráfico está vacío o no cuadra con un SELECT event_type, COUNT(*) … → revisar la query."
+      ;;
+    chart_customers_daily.png)
+      echo -e "  ${BOLD}1) Qué datos${RESET}"
+      ctx "Solo filas con event_type = 'purchase' (compras reales)."
+      ctx "Por cada día: número de user_id DISTINTOS que compraron ese día."
+      ctx "No es «número de tickets»: el mismo cliente que compra 3 veces cuenta 1."
+      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
+      ctx "Gráfico de línea (o área): eje X = tiempo (días, oct 2022 → feb 2023),"
+      ctx "eje Y = clientes distintos."
+      ctx "Subidas y bajadas = más o menos gente comprando ese día."
+      echo -e "  ${BOLD}3) Por qué así${RESET}"
+      ctx "Una línea temporal muestra la evolución; un pie no podría."
+      ctx "DISTINCT evita inflar el gráfico por compradores recurrentes el mismo día."
+      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
+      ctx "El tramo incluye febrero si el warehouse está completo (subject: rehacer con feb)."
+      ctx "Picos pueden coincidir con campañas; no hace falta explicar cada pico, sí el criterio."
+      ;;
+    chart_sales_monthly.png)
+      echo -e "  ${BOLD}1) Qué datos${RESET}"
+      ctx "Otra vez solo purchase. Por cada mes: SUM(price) de esas compras"
+      ctx "(ventas totales en Altairian Dollars)."
+      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
+      ctx "Barras (o columnas) por mes: altura = dinero total del mes."
+      ctx "Eje X = meses (oct, nov, dic, ene, feb…); eje Y = importe agregado."
+      echo -e "  ${BOLD}3) Por qué así${RESET}"
+      ctx "El reporting de negocio suele mirar el mes, no el segundo a segundo."
+      ctx "Las barras facilitan comparar «nov vs dic» de un vistazo."
+      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
+      ctx "Los valores absolutos dependen de los datos; lo importante es el filtro purchase"
+      ctx "y la agregación mensual correcta (date_trunc o equivalente)."
+      ;;
+    chart_avg_spend_daily.png)
+      echo -e "  ${BOLD}1) Qué datos${RESET}"
+      ctx "Solo purchase. Por día: dinero total de ese día dividido entre clientes distintos"
+      ctx "que compraron (gasto medio por cliente y día)."
+      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
+      ctx "Línea o área en el tiempo: eje X = días; eje Y = gasto medio."
+      echo -e "  ${BOLD}3) Por qué así${RESET}"
+      ctx "Un día con 1000 compras de 1 A no es lo mismo que 10 compras de 100 A."
+      ctx "La media por cliente separa «mucho volumen barato» de «poco volumen caro»."
+      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
+      ctx "Misma ventana temporal que los otros charts de EX01 (hasta febrero si aplica)."
+      ;;
+    mustache_item_price.png)
+      echo -e "  ${BOLD}1) Qué datos${RESET}"
+      ctx "Precios (price) de cada línea de compra: event_type = purchase."
+      ctx "También se imprimen en consola: count, mean, std, min, cuartiles (25/50/75), max."
+      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
+      ctx "Box plot horizontal o vertical («mustache» = bigote):"
+      ctx "• caja = del 25 % al 75 % de los precios (zona central)."
+      ctx "• raya dentro de la caja = mediana (50 %)."
+      ctx "• bigotes = hasta valores aún «normales»; puntos fuera = outliers."
+      echo -e "  ${BOLD}3) Por qué así${RESET}"
+      ctx "La media sola engaña si hay un precio de 300 A entre muchos de 3 A."
+      ctx "El box resume distribución sin listar cientos de miles de precios."
+      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
+      ctx "Puede haber precios raros (incluso negativos en algunos datasets): outliers visibles."
+      ctx "La hoja pide que el estudiante sepa explicar caja, mediana y bigotes."
+      ;;
+    mustache_basket.png)
+      echo -e "  ${BOLD}1) Qué datos${RESET}"
+      ctx "Por cada user_id con purchase: AVG(price) de sus líneas (cesta media de ese usuario)."
+      ctx "Luego se hace el box plot sobre ESA lista de medias (una por cliente)."
+      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
+      ctx "Otro box plot, pero la unidad ya no es «un producto», sino «un cliente»."
+      echo -e "  ${BOLD}3) Por qué así${RESET}"
+      ctx "El subject pide explícitamente el box de la cesta media por usuario (Part 2)."
+      ctx "Complementa el de precios unitarios: perfil de cliente vs precio de ítem."
+      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
+      ctx "La forma del box puede ser distinta del de ítems; el evaluado debe poder decir por qué."
+      ;;
+    building_frequency.png)
+      echo -e "  ${BOLD}1) Qué datos${RESET}"
+      ctx "Por cada cliente: cuántas compras tiene (frecuencia = COUNT de purchase)."
+      ctx "Luego se agrupan clientes en «edificios» o bins (p. ej. 0–10, 10–20, 20–30, 30+)."
+      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
+      ctx "Barras: eje X = rango de frecuencia; eje Y = cuántos clientes caen en ese rango."
+      ctx "Barra alta a la izquierda = muchos clientes compran pocas veces."
+      echo -e "  ${BOLD}3) Por qué así${RESET}"
+      ctx "Un histograma de clientes responde «¿la base es ocasional o recurrente?»."
+      ctx "Las barras (edificios) se leen mejor que una tabla de 100 000 frecuencias."
+      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
+      ctx "Misma idea que el subject: masa de clientes en frecuencias bajas, cola a la derecha."
+      ;;
+    building_monetary.png)
+      echo -e "  ${BOLD}1) Qué datos${RESET}"
+      ctx "Por cada cliente: SUM(price) de sus purchase (gasto total / monetary)."
+      ctx "Otra vez bins (p. ej. 0–50, 50–100, … A) y conteo de clientes por bin."
+      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
+      ctx "Barras: eje X = rango de gasto; eje Y = número de clientes."
+      echo -e "  ${BOLD}3) Por qué así${RESET}"
+      ctx "Frequency + monetary son dos caras RFM: «¿cuántas veces?» y «¿cuánto dinero?»."
+      ctx "Sirven de puente al clustering (EX04–EX05)."
+      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
+      ctx "Forma parecida al subject: muchos gastan poco; pocos gastan mucho."
+      ;;
+    elbow_method.png)
+      echo -e "  ${BOLD}1) Qué datos${RESET}"
+      ctx "Por cliente (purchase): rasgos tipo RFM (recencia, frecuencia, importe), escalados."
+      ctx "Se prueba K-Means con k = 1, 2, 3, … y se guarda la inertia (error intra-grupo)."
+      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
+      ctx "Línea: eje X = k (número de clusters); eje Y = inertia."
+      ctx "La curva baja rápido al principio y luego se aplana → zona del «codo»."
+      echo -e "  ${BOLD}3) Por qué así${RESET}"
+      ctx "Más grupos siempre bajan un poco la inertia; el codo marca donde ya no compensa."
+      ctx "No elige el k solo el ordenador: el estudiante debe justificar (negocio ≥ 4 perfiles)."
+      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
+      ctx "Que exista la curva y una explicación oral del k elegido (p. ej. 4 o 5), no un número mudo."
+      ;;
+    customers_per_cluster.png)
+      echo -e "  ${BOLD}1) Qué datos${RESET}"
+      ctx "Mismos clientes RFM, asignados a k grupos con el mismo k que EX04."
+      ctx "Cada barra = cuántos clientes cayó en ese segmento (new, inactive, gold…)."
+      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
+      ctx "Barras horizontales o verticales por etiqueta de negocio / id de cluster."
+      echo -e "  ${BOLD}3) Por qué así${RESET}"
+      ctx "El jefe necesita tamaños de segmento para emails (bienvenida, cupón, VIP…)."
+      ctx "Contar cabezas por grupo es el primer gráfico que pide el sentido común."
+      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
+      ctx "k alineado con EX04; al menos 4 perfiles de negocio según el subject."
+      ;;
+    clusters_frequency_monetary.png)
+      echo -e "  ${BOLD}1) Qué datos${RESET}"
+      ctx "Los mismos clusters, proyectados en un plano (p. ej. frecuencia vs monetary)"
+      ctx "o con centroides marcados para ver separación."
+      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
+      ctx "Dispersión / burbujas / puntos coloreados por grupo (según la implementación)."
+      echo -e "  ${BOLD}3) Por qué así${RESET}"
+      ctx "Una barra de tamaños no basta: hay que ver si los grupos se separan en comportamiento."
+      ctx "La hoja pide ≥ 2 gráficos y explicar qué cliente hay en cada grupo."
+      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
+      ctx "El estudiante describe cada grupo en lenguaje de negocio, no solo «cluster 0, 1, 2»."
+      ;;
+    *)
+      ctx "Abrid el PNG y contrastad ejes y filtros con el subject."
+      ;;
+  esac
+  if [[ -f "$png" ]]; then
+    show_cmd "xdg-open \"$png\""
+    note "Ruta: $png"
+  else
+    note "Cuando exista el PNG: xdg-open <ruta-al-png>"
+  fi
+}
+
+explain_exercise_artifacts() {
+  local outputs_csv="$1"
+  local dir="$2"
+  local out
+  IFS=',' read -r -a outs <<< "$outputs_csv"
+  echo
+  echo -e "  ${BOLD}📚 Explicación de los gráficos${RESET}"
+  ctx "Ideal: leerlo en voz alta con el evaluado mientras se mira la imagen."
+  for out in "${outs[@]}"; do
+    explain_artifact "$SCRIPT_DIR/$dir/$out"
+  done
+}
+
 show_manual_python() {
   local file="$1"
   local dir base
@@ -557,6 +742,7 @@ run_python_exercise() {
           fi
         done
         [[ "$missing" -eq 0 ]] && RESULT["$key"]=yes || RESULT["$key"]=no
+        explain_exercise_artifacts "$outputs_csv" "$dir"
       else
         fail "$base terminó con error (crash → flag en Intra)"
         RESULT["$key"]=no
@@ -568,6 +754,8 @@ run_python_exercise() {
       for out in "${outs[@]}"; do
         show_cmd "ls -lh $SCRIPT_DIR/$dir/$out"
       done
+      echo
+      explain_exercise_artifacts "$outputs_csv" "$dir"
       echo
       read -r -p "$(echo -e "${CYAN}Cuando hayáis ejecutado y visto los gráficos, Enter…${RESET}")"
       if ask_yes_no "¿La ejecución manual de $key fue correcta?" "n"; then
@@ -601,6 +789,7 @@ confirm_visual() {
     else
       warn "Aún no existe: $out (ejecutad el script antes)"
     fi
+    explain_artifact "$SCRIPT_DIR/$out"
   done
   ask_scale "$key" "$question"
 }
