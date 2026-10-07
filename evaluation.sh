@@ -489,6 +489,24 @@ dynamic_check() {
 }
 
 
+
+# Matplotlib en 42: $HOME suele estar lleno → error "No space left on device" en ~/.cache/matplotlib
+# Forzamos caché en goinfre (o /tmp) y backend Agg para generar PNG sin ventana.
+matplotlib_env() {
+  local cache
+  if [[ -d "${HOME}/goinfre" ]]; then
+    cache="${HOME}/goinfre/.cache/matplotlib"
+  elif [[ -d "${HOME}/sgoinfre" ]]; then
+    cache="${HOME}/sgoinfre/.cache/matplotlib"
+  else
+    cache="/tmp/matplotlib-$(id -un 2>/dev/null || whoami)"
+  fi
+  mkdir -p "$cache" 2>/dev/null || cache="/tmp/matplotlib-$(id -un 2>/dev/null || whoami)"
+  mkdir -p "$cache" 2>/dev/null || true
+  export MPLCONFIGDIR="$cache"
+  export MPLBACKEND="${MPLBACKEND:-Agg}"
+}
+
 offer_run() {
   local title="$1"
   local ans
@@ -518,159 +536,121 @@ explain_artifact() {
   local base
   base="$(basename "$png")"
   echo
-  echo -e "  ${BOLD}${CYAN}📐 ¿Qué estamos viendo? → ${base}${RESET}"
+  echo -e "  ${BOLD}${CYAN}📐 Contenido de este gráfico → ${base}${RESET}"
   case "$base" in
     pie_chart.png)
-      echo -e "  ${BOLD}1) Qué datos${RESET}"
-      ctx "Cada evento de la tabla customers (Module 1) tiene un event_type:"
-      ctx "view, cart, remove_from_cart, purchase (y los que existan en la BD)."
-      ctx "Se cuenta CUÁNTOS eventos hay de cada tipo (COUNT + GROUP BY en SQL)."
-      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
-      ctx "Un círculo (pie / «tarta») dividido en sectores."
-      ctx "El tamaño de cada porción = proporción sobre el total de eventos (suma 100 %)."
-      ctx "Suele ir con colores distintos y etiquetas o leyenda con el nombre del tipo."
-      echo -e "  ${BOLD}3) Por qué así${RESET}"
-      ctx "Cuando la pregunta es «¿qué parte del total es cada categoría?», el pie es natural:"
-      ctx "el ojo compara áreas mejor que una lista de millones de filas."
-      ctx "No sirve para evolucionar en el tiempo (eso son las líneas de EX01)."
-      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
-      ctx "view suele ser la porción más grande; purchase la más pequeña."
-      ctx "Si el gráfico está vacío o no cuadra con un SELECT event_type, COUNT(*) … → revisar la query."
+      ctx "Mirad el PNG: veréis cuatro sectores etiquetados por event_type."
+      ctx ""
+      ctx "Orden típico en VUESTRO warehouse (customers tras Module 1, ~19,2 M eventos):"
+      ctx "  • view              ≈ 50 %  (la porción más grande — mucha gente solo mira)"
+      ctx "  • cart              ≈ 29 %  (añaden al carrito)"
+      ctx "  • remove_from_cart  ≈ 14 %  (sacan del carrito)"
+      ctx "  • purchase          ≈  7 %  (la porción más pequeña — compra real)"
+      ctx ""
+      ctx "Cada porción = COUNT(*) de ese event_type / total de filas de customers."
+      ctx "Los porcentajes del subject PDF son orientativos; los vuestros salen de la BD real."
+      ctx "Si purchase no es la más pequeña o falta un tipo, algo falla en el SQL o en los datos."
       ;;
     chart_customers_daily.png)
-      echo -e "  ${BOLD}1) Qué datos${RESET}"
-      ctx "Solo filas con event_type = 'purchase' (compras reales)."
-      ctx "Por cada día: número de user_id DISTINTOS que compraron ese día."
-      ctx "No es «número de tickets»: el mismo cliente que compra 3 veces cuenta 1."
-      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
-      ctx "Gráfico de línea (o área): eje X = tiempo (días, oct 2022 → feb 2023),"
-      ctx "eje Y = clientes distintos."
-      ctx "Subidas y bajadas = más o menos gente comprando ese día."
-      echo -e "  ${BOLD}3) Por qué así${RESET}"
-      ctx "Una línea temporal muestra la evolución; un pie no podría."
-      ctx "DISTINCT evita inflar el gráfico por compradores recurrentes el mismo día."
-      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
-      ctx "El tramo incluye febrero si el warehouse está completo (subject: rehacer con feb)."
-      ctx "Picos pueden coincidir con campañas; no hace falta explicar cada pico, sí el criterio."
+      ctx "Mirad el PNG: una línea (o área) a lo largo del tiempo."
+      ctx ""
+      ctx "Eje X: días desde inicios de oct 2022 hasta fin de feb 2023 (warehouse completo)."
+      ctx "Eje Y: clientes DISTINTOS que hicieron al menos un purchase ese día."
+      ctx ""
+      ctx "Lo que «dice» el dibujo: días con más o menos compradores (no visitas)."
+      ctx "Picos = muchos user_id distintos comprando; valles = pocos."
+      ctx "No confundir con el número de líneas purchase: un cliente con 5 compras el mismo"
+      ctx "día cuenta una sola vez en este gráfico (COUNT DISTINCT user_id)."
       ;;
     chart_sales_monthly.png)
-      echo -e "  ${BOLD}1) Qué datos${RESET}"
-      ctx "Otra vez solo purchase. Por cada mes: SUM(price) de esas compras"
-      ctx "(ventas totales en Altairian Dollars)."
-      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
-      ctx "Barras (o columnas) por mes: altura = dinero total del mes."
-      ctx "Eje X = meses (oct, nov, dic, ene, feb…); eje Y = importe agregado."
-      echo -e "  ${BOLD}3) Por qué así${RESET}"
-      ctx "El reporting de negocio suele mirar el mes, no el segundo a segundo."
-      ctx "Las barras facilitan comparar «nov vs dic» de un vistazo."
-      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
-      ctx "Los valores absolutos dependen de los datos; lo importante es el filtro purchase"
-      ctx "y la agregación mensual correcta (date_trunc o equivalente)."
+      ctx "Mirad el PNG: una barra (o columna) por mes."
+      ctx ""
+      ctx "Eje X: meses (oct, nov, dic, ene, feb…)."
+      ctx "Eje Y: suma de price de todos los purchase de ese mes (Altairian Dollars)."
+      ctx ""
+      ctx "Lo que «dice»: en qué meses entró más dinero por compras, no por visitas."
+      ctx "Comparad alturas entre meses; los totales absolutos dependen de vuestra BD."
+      ctx "Debe aparecer febrero si customers incluye data_2023_feb / eventos de feb."
       ;;
     chart_avg_spend_daily.png)
-      echo -e "  ${BOLD}1) Qué datos${RESET}"
-      ctx "Solo purchase. Por día: dinero total de ese día dividido entre clientes distintos"
-      ctx "que compraron (gasto medio por cliente y día)."
-      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
-      ctx "Línea o área en el tiempo: eje X = días; eje Y = gasto medio."
-      echo -e "  ${BOLD}3) Por qué así${RESET}"
-      ctx "Un día con 1000 compras de 1 A no es lo mismo que 10 compras de 100 A."
-      ctx "La media por cliente separa «mucho volumen barato» de «poco volumen caro»."
-      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
-      ctx "Misma ventana temporal que los otros charts de EX01 (hasta febrero si aplica)."
+      ctx "Mirad el PNG: otra serie temporal diaria."
+      ctx ""
+      ctx "Eje X: días (mismo periodo que clientes/día)."
+      ctx "Eje Y: gasto medio por cliente comprador ese día"
+      ctx "        = (suma de price del día) / (clientes distintos con purchase ese día)."
+      ctx ""
+      ctx "Lo que «dice»: días en los que quien compra gasta más o menos de media."
+      ctx "Un día puede tener pocos clientes pero ticket medio alto → la línea sube."
       ;;
     mustache_item_price.png)
-      echo -e "  ${BOLD}1) Qué datos${RESET}"
-      ctx "Precios (price) de cada línea de compra: event_type = purchase."
-      ctx "También se imprimen en consola: count, mean, std, min, cuartiles (25/50/75), max."
-      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
-      ctx "Box plot horizontal o vertical («mustache» = bigote):"
-      ctx "• caja = del 25 % al 75 % de los precios (zona central)."
-      ctx "• raya dentro de la caja = mediana (50 %)."
-      ctx "• bigotes = hasta valores aún «normales»; puntos fuera = outliers."
-      echo -e "  ${BOLD}3) Por qué así${RESET}"
-      ctx "La media sola engaña si hay un precio de 300 A entre muchos de 3 A."
-      ctx "El box resume distribución sin listar cientos de miles de precios."
-      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
-      ctx "Puede haber precios raros (incluso negativos en algunos datasets): outliers visibles."
-      ctx "La hoja pide que el estudiante sepa explicar caja, mediana y bigotes."
+      ctx "Mirad el PNG: un box plot de precios UNITARIOS (cada línea purchase.price)."
+      ctx ""
+      ctx "Caja central: del percentil 25 al 75 (la mayoría de precios «normales»)."
+      ctx "Línea en la caja: mediana (~3,3 A en el ejemplo del subject; la vuestra sale de la BD)."
+      ctx "Bigotes: hasta valores aún no extremos; puntos fuera: outliers (muy baratos o caros)."
+      ctx ""
+      ctx "En la TERMINAL el script también imprime count, mean, std, min, 25%, 50%, 75%, max."
+      ctx "Eso es la Part 1 de la hoja: números + este dibujo de la distribución de price."
+      ctx "Si la mediana está cerca del borde de la caja o hay muchos puntos a la derecha,"
+      ctx "la tienda tiene cola de productos caros (o precios anómalos en los datos)."
       ;;
     mustache_basket.png)
-      echo -e "  ${BOLD}1) Qué datos${RESET}"
-      ctx "Por cada user_id con purchase: AVG(price) de sus líneas (cesta media de ese usuario)."
-      ctx "Luego se hace el box plot sobre ESA lista de medias (una por cliente)."
-      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
-      ctx "Otro box plot, pero la unidad ya no es «un producto», sino «un cliente»."
-      echo -e "  ${BOLD}3) Por qué así${RESET}"
-      ctx "El subject pide explícitamente el box de la cesta media por usuario (Part 2)."
-      ctx "Complementa el de precios unitarios: perfil de cliente vs precio de ítem."
-      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
-      ctx "La forma del box puede ser distinta del de ítems; el evaluado debe poder decir por qué."
+      ctx "Mirad el PNG: otro box plot, pero cada punto de datos es un CLIENTE."
+      ctx ""
+      ctx "Para cada user_id: AVG(price) de sus purchase → «cesta media» de ese cliente."
+      ctx "Luego el box resume la distribución de esas medias."
+      ctx ""
+      ctx "Lo que «dice»: si los clientes, de media, gastan poco o mucho por compra agregada."
+      ctx "No es el mismo dibujo que mustache_item_price (ítem suelto vs perfil de cliente)."
+      ctx "Part 2 de la hoja: hay que explicar en voz alta caja, mediana y outliers de ESTE gráfico."
       ;;
     building_frequency.png)
-      echo -e "  ${BOLD}1) Qué datos${RESET}"
-      ctx "Por cada cliente: cuántas compras tiene (frecuencia = COUNT de purchase)."
-      ctx "Luego se agrupan clientes en «edificios» o bins (p. ej. 0–10, 10–20, 20–30, 30+)."
-      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
-      ctx "Barras: eje X = rango de frecuencia; eje Y = cuántos clientes caen en ese rango."
-      ctx "Barra alta a la izquierda = muchos clientes compran pocas veces."
-      echo -e "  ${BOLD}3) Por qué así${RESET}"
-      ctx "Un histograma de clientes responde «¿la base es ocasional o recurrente?»."
-      ctx "Las barras (edificios) se leen mejor que una tabla de 100 000 frecuencias."
-      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
-      ctx "Misma idea que el subject: masa de clientes en frecuencias bajas, cola a la derecha."
+      ctx "Mirad el PNG: histograma de barras («edificios»)."
+      ctx ""
+      ctx "Eje X: rangos de frecuencia de compra por cliente (p. ej. 0–10, 10–20, 20–30, 30+)."
+      ctx "Eje Y: cuántos clientes caen en cada rango."
+      ctx ""
+      ctx "En vuestro pipeline típico la primera barra (pocas compras) es la más alta:"
+      ctx "la mayoría compra pocas veces; la cola a la derecha son los muy recurrentes."
+      ctx "Los números exactos salen de COUNT de purchase por user_id + bins del script."
       ;;
     building_monetary.png)
-      echo -e "  ${BOLD}1) Qué datos${RESET}"
-      ctx "Por cada cliente: SUM(price) de sus purchase (gasto total / monetary)."
-      ctx "Otra vez bins (p. ej. 0–50, 50–100, … A) y conteo de clientes por bin."
-      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
-      ctx "Barras: eje X = rango de gasto; eje Y = número de clientes."
-      echo -e "  ${BOLD}3) Por qué así${RESET}"
-      ctx "Frequency + monetary son dos caras RFM: «¿cuántas veces?» y «¿cuánto dinero?»."
-      ctx "Sirven de puente al clustering (EX04–EX05)."
-      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
-      ctx "Forma parecida al subject: muchos gastan poco; pocos gastan mucho."
+      ctx "Mirad el PNG: mismo estilo de barras, otra variable."
+      ctx ""
+      ctx "Eje X: rangos de gasto total por cliente (SUM price), p. ej. 0–50, 50–100, … 200+ A."
+      ctx "Eje Y: cuántos clientes en cada rango."
+      ctx ""
+      ctx "Otra vez: masa a la izquierda (gastan poco) y cola de quien gasta mucho."
+      ctx "Junto con frequency, es el retrato RFM que alimenta elbow/clustering."
       ;;
     elbow_method.png)
-      echo -e "  ${BOLD}1) Qué datos${RESET}"
-      ctx "Por cliente (purchase): rasgos tipo RFM (recencia, frecuencia, importe), escalados."
-      ctx "Se prueba K-Means con k = 1, 2, 3, … y se guarda la inertia (error intra-grupo)."
-      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
-      ctx "Línea: eje X = k (número de clusters); eje Y = inertia."
-      ctx "La curva baja rápido al principio y luego se aplana → zona del «codo»."
-      echo -e "  ${BOLD}3) Por qué así${RESET}"
-      ctx "Más grupos siempre bajan un poco la inertia; el codo marca donde ya no compensa."
-      ctx "No elige el k solo el ordenador: el estudiante debe justificar (negocio ≥ 4 perfiles)."
-      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
-      ctx "Que exista la curva y una explicación oral del k elegido (p. ej. 4 o 5), no un número mudo."
+      ctx "Mirad el PNG: una curva que baja y se aplana."
+      ctx ""
+      ctx "Eje X: k = número de clusters probados (1…10 en vuestra implementación)."
+      ctx "Eje Y: inertia (suma de distancias al centroide; más baja = grupos más compactos)."
+      ctx ""
+      ctx "El «codo» es donde la curva deja de caer fuerte. En este proyecto se defiende k = 5"
+      ctx "(SELECTED_K), alineado con ≥ 4 perfiles de negocio del subject y con EX05."
+      ctx "No basta el dibujo: en defensa hay que decir por qué ese k y no 2 o 9."
       ;;
     customers_per_cluster.png)
-      echo -e "  ${BOLD}1) Qué datos${RESET}"
-      ctx "Mismos clientes RFM, asignados a k grupos con el mismo k que EX04."
-      ctx "Cada barra = cuántos clientes cayó en ese segmento (new, inactive, gold…)."
-      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
-      ctx "Barras horizontales o verticales por etiqueta de negocio / id de cluster."
-      echo -e "  ${BOLD}3) Por qué así${RESET}"
-      ctx "El jefe necesita tamaños de segmento para emails (bienvenida, cupón, VIP…)."
-      ctx "Contar cabezas por grupo es el primer gráfico que pide el sentido común."
-      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
-      ctx "k alineado con EX04; al menos 4 perfiles de negocio según el subject."
+      ctx "Mirad el PNG: barras con el tamaño de cada segmento tras K-Means (mismo k que EX04)."
+      ctx ""
+      ctx "Cada barra = un grupo etiquetado de negocio (p. ej. new, inactive, silver, gold, platinum)."
+      ctx "La altura = cuántos clientes cayeron en ese grupo."
+      ctx ""
+      ctx "Lo que «dice»: de qué tamaño es cada público para campañas (emails del subject)."
+      ctx "Si k no coincide con EX04, la hoja lo marca mal."
       ;;
     clusters_frequency_monetary.png)
-      echo -e "  ${BOLD}1) Qué datos${RESET}"
-      ctx "Los mismos clusters, proyectados en un plano (p. ej. frecuencia vs monetary)"
-      ctx "o con centroides marcados para ver separación."
-      echo -e "  ${BOLD}2) Cómo se ve${RESET}"
-      ctx "Dispersión / burbujas / puntos coloreados por grupo (según la implementación)."
-      echo -e "  ${BOLD}3) Por qué así${RESET}"
-      ctx "Una barra de tamaños no basta: hay que ver si los grupos se separan en comportamiento."
-      ctx "La hoja pide ≥ 2 gráficos y explicar qué cliente hay en cada grupo."
-      echo -e "  ${BOLD}4) Qué debería notar el evaluador${RESET}"
-      ctx "El estudiante describe cada grupo en lenguaje de negocio, no solo «cluster 0, 1, 2»."
+      ctx "Mirad el PNG: los grupos en un plano de comportamiento (frecuencia vs monetary u otra proyección)."
+      ctx ""
+      ctx "Colores o símbolos distintos = clusters distintos; a veces se marcan centroides."
+      ctx "Lo que «dice»: si los segmentos se separan de verdad (no solo etiquetas inventadas)."
+      ctx "En defensa: para cada color, una frase de negocio («estos compran poco y hace tiempo…»)."
       ;;
     *)
-      ctx "Abrid el PNG y contrastad ejes y filtros con el subject."
+      ctx "Abrid el PNG y contrastad ejes y filtros con el subject y con vuestra salida en consola."
       ;;
   esac
   if [[ -f "$png" ]]; then
@@ -680,6 +660,7 @@ explain_artifact() {
     note "Cuando exista el PNG: xdg-open <ruta-al-png>"
   fi
 }
+
 
 explain_exercise_artifacts() {
   local outputs_csv="$1"
@@ -709,7 +690,8 @@ show_manual_python() {
   note "Paso 2 – Ejecutar el script:"
   show_cmd "cd $SCRIPT_DIR/$dir"
   show_cmd "python3 $base"
-  note "Si quieres solo PNG (sin ventana gráfica):"
+  note "Si quieres solo PNG (sin ventana gráfica) y evitar errores de caché en 42:"
+  show_cmd "export MPLCONFIGDIR=\$HOME/goinfre/.cache/matplotlib; mkdir -p \"\$MPLCONFIGDIR\""
   show_cmd "MPLBACKEND=Agg python3 $base"
   echo
   note "Paso 3 – Ver el resultado:"
@@ -729,8 +711,14 @@ run_python_exercise() {
   offer_run "¿Cómo ejecutamos $key ($base)?"
   case "$RUN_CHOICE" in
     auto)
+      # Pantalla más limpia antes de la salida larga de Python
+      clear 2>/dev/null || true
+      header
+      subsection "Ejecución automática · $key"
+      matplotlib_env
+      note "MPLCONFIGDIR=$MPLCONFIGDIR (evita llenar ~/.cache en la sesión 42)"
       show_cmd "cd $SCRIPT_DIR/$dir && MPLBACKEND=Agg python3 $base"
-      if (cd "$SCRIPT_DIR/$dir" && MPLBACKEND=Agg python3 "$base"); then
+      if (cd "$SCRIPT_DIR/$dir" && matplotlib_env && MPLBACKEND=Agg python3 "$base"); then
         local missing=0 out
         IFS=',' read -r -a outs <<< "$outputs_csv"
         for out in "${outs[@]}"; do
@@ -789,8 +777,9 @@ confirm_visual() {
     else
       warn "Aún no existe: $out (ejecutad el script antes)"
     fi
-    explain_artifact "$SCRIPT_DIR/$out"
   done
+  note "La explicación detallada del contenido del gráfico ya se mostró al ejecutar el script."
+  note "Aquí solo confirmáis que se ha ABIERTO y comentado en la defensa."
   ask_scale "$key" "$question"
 }
 
