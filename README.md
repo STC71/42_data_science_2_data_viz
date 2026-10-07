@@ -22,7 +22,8 @@
 7. [Asistentes por ejercicio](#asistentes-ex)
 8. [Nota sobre febrero](#febrero)
 9. [Checklist subject](#checklist)
-10. [Navegación](#navegacion)
+10. [Matemáticas del módulo (`mates.md`)](#mates)
+11. [Navegación](#navegacion)
 
 ---
 
@@ -50,15 +51,16 @@ Todo el pipeline de gráficos usa **PostgreSQL** (`piscineds`) y, en la práctic
 ```text
 data_science_2_data_viz/
 ├── README.md          ← este fichero
+├── mates.md           ← matemáticas del módulo (apoyo didáctico)
 ├── start.sh           ← asistente GLOBAL del módulo
+├── evaluation.sh      ← guía interactiva de defensa
 ├── imgs/              ← banners / capturas opcionales
 ├── ex00/  pie.*
 ├── ex01/  chart.*
 ├── ex02/  mustache.*
 ├── ex03/  Building.*
 ├── ex04/  elbow.*
-├── ex05/  Clustering.*
-└── evaluation.sh       ← guía interactiva de defensa
+└── ex05/  Clustering.*
 ```
 
 Cada `ex0N/` incluye, además de la entrega:
@@ -235,9 +237,33 @@ El PDF del subject muestra gráficos **sin** febrero. Con el warehouse completo 
 
 ---
 
+
+<a id="mates"></a>
+## 📐 Matemáticas del módulo (`mates.md`)
+
+Guía didáctica de las **cuentas** detrás de cada gráfico del Module 2:
+
+| Tema | Ejercicios |
+|------|------------|
+| Porcentajes y proporciones | EX00 (pie) |
+| Conteos, sumas y medias en el tiempo | EX01 (charts) |
+| Media, mediana, cuartiles, box plot | EX02 (mustache) |
+| Histogramas / bins (frequency · monetary) | EX03 (Building) |
+| RFM, escalado, K-Means, inertia y codo | EX04 (elbow) |
+| Mismo `k` e interpretación de segmentos | EX05 (Clustering) |
+
+Está pensada para quien **no** ha visto estadística ni machine learning: analogías cotidianas, sin asumir fórmulas previas.
+
+📖 **[mates.md](./mates.md)** — material de apoyo. **No** sustituye a `en.subject.pdf` ni a los entregables `pie.*`, `chart.*`, `mustache.*`, `Building.*`, `elbow.*`, `Clustering.*`.
+
+[↑ Volver al índice](#indice)
+
+---
+
 <a id="navegacion"></a>
 ## 🔗 Navegación
 
+- [📐 mates.md – matemáticas del módulo](./mates.md)
 - [← Module 1 Data Warehouse](../data_science_1_data_warehouse/README.md)
 - [→ Module 3 The present](../data_science_3_the_present/README.md)
 - [Monorepo](../README.md)
