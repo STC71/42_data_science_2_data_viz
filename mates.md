@@ -1,8 +1,10 @@
 # 📐 Matemáticas del Module 2 – Data Viz
 
-**Piscine Data Science · sternero – 42 Málaga**
+<p align="center">
+  <img src="./imgs/banner_mates.jpg" alt="Piscine Data Science – Module 2 – Training Piscine datascience – 2  – Matemáticas  – sternero – 42 Málaga" width="100%">
+</p>
 
-Documento **didáctico**: no sustituye al subject ni a los scripts (`pie.*`, `chart.*`, …).  
+<br>Este es un documento **didáctico**: no sustituye al subject ni a los scripts (`pie.*`, `chart.*`, …).  
 Sirve para **entender con calma** las cuentas que hay detrás de cada gráfico, **sin dar por sentado** que ya sabes estadística o machine learning.
 
 > **Analogía global:** la tabla `customers` es un cuaderno enorme de lo que hizo cada persona en la tienda online.  
