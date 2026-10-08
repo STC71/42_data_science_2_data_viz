@@ -42,6 +42,9 @@ Sirve para **entender con calma** las cuentas que hay detrás de cada gráfico, 
 
 **Sumar** = juntar cantidades (`SUM(price)`).
 
+- SUM(): Es la función que le dice a la base de datos: "Suma todos los valores de esta columna".
+- price: Es el nombre de la columna (en este caso, los precios) que quieres juntar y sumar.
+
 **Analogía:** total de la caja registradora al final del día.
 
 ### 1.3 Media (promedio)
@@ -50,7 +53,7 @@ $$
 \text{media} = \frac{\text{suma de los valores}}{\text{cuántos valores hay}}
 $$
 
-**Analogía:** cinco amigos pagan 2, 2, 2, 2 y 100 €. La media es \((2+2+2+2+100)/5 = 21{,}6\) €.  
+**Analogía:** cinco amigos pagan 2, 2, 2, 2 y 100 €. La media es \((2+2+2+2+100)/5 = 21,6 €\).  
 La media **se deja arrastrar** por el 100 € (un valor raro).
 
 ### 1.4 Valores distintos (DISTINCT)
@@ -105,7 +108,7 @@ Cuando la pregunta es **“¿qué fracción del total?”**, un círculo partido
 
 **No** sirve bien para “cómo cambió esto mes a mes” (eso es EX01).
 
-### Números típicos en *vuestro* warehouse
+### Números típicos en *nuestro* warehouse
 
 Tras Module 1, con ~19 millones de eventos, el orden suele ser:
 
@@ -130,19 +133,59 @@ Tres gráficos; **solo `purchase`**.
 
 **Pregunta:** cada día, ¿cuántas **personas diferentes** compraron?
 
+**PNG correspondiente:** [`puchases_per_day.png`](./ex01/imgs/puchases_per_day.png)  
+Es el gráfico de línea con el número de **clientes distintos por día**.
+
 $$
 \text{clientes del día } d = \text{número de } user\_id \text{ distintos con purchase en } d
 $$
 
-**Analogía:** no cuentas tickets de caja, cuentas **caras distintas** en la tienda ese día.
+```sql
+SELECT COUNT(DISTINCT user_id) AS clientes_unicos
+FROM tu_tabla_de_ventas
+WHERE fecha_columna = 'tu_fecha_aqui'  -- Aquí defines el día (d = n)
+  AND estado_compra = 'purchase';      -- Aquí filtras solo los que compraron
+```
+
+
+¿Y si quieres ver el cálculo de todos los días por separado?
+
+Si en lugar de un solo día quieres ver una lista con el conteo de cada uno de los días, solo debes agregar un GROUP BY:
+
+```sql
+SELECT 
+    fecha_columna AS dia,                        -- Fecha en la que se registró la compra
+    COUNT(DISTINCT user_id) AS clientes_unicos   -- Cuenta cada cliente una sola vez por día
+FROM tu_tabla_de_ventas                          -- Tabla que contiene las ventas
+WHERE estado_compra = 'purchase'                 -- Conserva únicamente las compras
+GROUP BY fecha_columna                           -- Agrupa todas las compras del mismo día
+ORDER BY fecha_columna;                          -- Muestra los días en orden cronológico
+```
+
+**Analogía:** no cuentas tickets de caja, cuentas **caras distintas compraron** en la tienda ese día.
 
 ### 3.2 Ventas por mes
 
 **Pregunta:** cada mes, ¿cuánto dinero sumaron las compras?
 
+**PNG correspondiente:** [`total_sales_by_months.png`](./ex01/imgs/total_sales_by_months.png)  
+Es el gráfico de barras con las **ventas totales de cada mes**.
+
 $$
 \text{ventas del mes } m = \sum \text{price de los purchase en } m
 $$
+
+Para responder a esta pregunta y generar ese gráfico de barras de ventas mensuales, en SQL usamos una combinación de SUM(price) para sumar el dinero y un GROUP BY para separar los resultados mes por mes.
+
+```sql
+SELECT 
+    mes_columna AS mes,                 -- Mes en el que se registraron las compras
+    SUM(price) AS ventas_totales        -- Suma el precio de todas las compras del mes
+FROM tu_tabla_de_ventas                 -- Tabla que contiene las ventas
+WHERE estado_compra = 'purchase'        -- Conserva únicamente las compras
+GROUP BY mes_columna                    -- Agrupa las ventas correspondientes al mismo mes
+ORDER BY mes_columna;                   -- Muestra los meses en orden cronológico
+```
 
 **Analogía:** total de la caja de octubre, de noviembre, etc.
 
@@ -150,21 +193,83 @@ $$
 
 **Pregunta:** el día \(d\), de media, ¿cuánto gastó cada comprador?
 
+**PNG correspondiente:** [`average_spend.png`](./ex01/imgs/average_spend.png)  
+Es el gráfico de área con el **gasto medio diario por cliente**.
+
 $$
 \text{gasto medio}(d) = \frac{\text{suma de price ese día}}{\text{clientes distintos ese día}}
 $$
+
+```sql
+SELECT 
+    fecha_columna AS dia,                                -- Día en el que se registraron las compras
+    SUM(price) / COUNT(DISTINCT user_id) AS gasto_medio  -- Ventas del día divididas entre sus clientes
+FROM tu_tabla_de_ventas                                  -- Tabla que contiene las ventas
+WHERE estado_compra = 'purchase'                         -- Conserva únicamente las compras
+GROUP BY fecha_columna                                   -- Calcula un resultado independiente por día
+ORDER BY fecha_columna;                                  -- Muestra los días en orden cronológico
+```
 
 **Analogía:** un día pueden pasar pocas personas pero comprar caro → media alta; o muchas personas comprando barato → media más baja.
 
 ### Por qué “líneas” y “barras” en el tiempo
 
-El eje X es **tiempo**. El ojo sigue una evolución. Un pie chart no tiene eje temporal.
+En estos gráficos, el eje X representa el **tiempo**: cada punto o barra corresponde a
+un día o a un mes. Al colocar las fechas en orden, podemos **comparar periodos y detectar
+la evolución de las compras**: subidas, bajadas, picos o temporadas con más actividad.
+La línea resulta especialmente útil para seguir una tendencia, mientras que las barras
+facilitan comparar cantidades entre meses.
+
+Un *pie chart* (como el que tenemos en ex00) responde a otra pregunta: **cómo se reparte un total entre varias
+categorías**. Sus sectores muestran proporciones, pero no colocan los datos en una
+secuencia temporal; por eso no es adecuado para observar cómo cambian las ventas de un
+mes a otro.
 
 [↑ Volver al índice](#indice)
 
 ---
 
 ## 4. EX02 – Media, mediana, cuartiles y el “bigote” {#ex02}
+
+En EX02, los apartados **4.1, 4.2 y 4.3** explican los valores estadísticos
+que se calculan, pero no tienen un PNG independiente: esos valores se resumen
+visualmente dentro de los box plots del apartado 4.4.
+
+### Qué vemos en cada box plot
+
+#### `box_plot_price.png`: precio de los artículos comprados
+
+![Box plot de precios de artículos](./ex02/imgs/box_plot_price.png)
+
+Cada valor representa el `price` de una línea `purchase`, es decir, el precio
+de un artículo comprado. La caja contiene el 50 % central de esos precios:
+su extremo izquierdo es Q1, la línea roja es la mediana (Q2) y su extremo
+derecho es Q3. Los bigotes muestran el rango de valores que el gráfico no
+considera extremos. En esta imagen no aparecen puntos de *outliers* porque el
+script los oculta con `showfliers=False`.
+
+La caja es bastante más ancha hacia la derecha y el bigote derecho es largo:
+esto indica que hay más dispersión entre los precios altos y algunos productos
+son mucho más caros que los precios habituales. La media, que se imprime en la
+consola pero no se dibuja como una línea, puede verse afectada por esos valores
+altos.
+
+#### `box_plot_average.png`: precio medio por usuario
+
+![Box plot del precio medio por usuario](./ex02/imgs/box_plot_average.png)
+
+Aquí cada valor representa el precio medio de los artículos comprados por un
+usuario: primero se calcula `AVG(price)` agrupando por `user_id` y después se
+construye el box plot con esas medias. Por eso este gráfico responde a una
+pregunta distinta: no describe cada artículo, sino el precio típico de compra
+de cada cliente.
+
+La caja muestra el 50 % central de las medias de los usuarios. En comparación
+con el gráfico anterior, la escala es mucho mayor y la caja se extiende
+aproximadamente entre los 16 y los 62 ₳, con una mediana cercana a 33 ₳. El
+bigote derecho llega aproximadamente a 130 ₳, lo que muestra que algunos
+usuarios tienen una media de compra bastante más alta. Como en el gráfico
+anterior, los posibles *outliers* no se dibujan.
 
 ### 4.1 Media vs mediana (con paciencia)
 
@@ -175,6 +280,17 @@ Ordena los precios de menor a mayor.
 - **Media** = suma / n. Un gigante **sí** sube la media.
 
 Por eso en precios de tienda (muchos baratos + algunos carísimos) la **mediana** suele describir mejor “lo típico”.
+
+Como SQL no tiene una función simple llamada MEDIAN() en todos los sistemas, tenemos que usar una función especial de "percentiles" que hace exactamente lo que necesitamos: ordenar los precios y busca el valor del centro (el percentil 0.50). En la mayoría de bases de datos modernas (como PostgreSQL, Oracle o Redshift), se escribe así:
+
+```sql
+SELECT 
+    PERCENTILE_CONT(0.50)                  -- Percentil 50: la mediana de los precios
+    WITHIN GROUP (ORDER BY price)          -- Ordena los precios antes de localizar el centro
+    AS precio_mediana                      -- Nombre del resultado calculado
+FROM tu_tabla_de_ventas                    -- Tabla que contiene las ventas
+WHERE estado_compra = 'purchase';          -- Conserva únicamente las compras
+```
 
 ### 4.2 Cuartiles (Q1, Q2, Q3)
 
@@ -216,7 +332,13 @@ Es un **resumen dibujado** de lo anterior:
 **Dos box plots del subject:**
 
 1. **Precios de ítem** → cada compra aporta su `price`.
+   PNG: [`box_plot_price.png`](./ex02/imgs/box_plot_price.png)
 2. **Cesta media por usuario** → primero, para cada cliente, `AVG(price)` de sus compras; luego el box sobre esas medias.
+   PNG: [`box_plot_average.png`](./ex02/imgs/box_plot_average.png)
+
+`mustache_python.png` es una captura explicativa del código y
+`mustache_diagrama_flujo.png` es un diagrama del proceso; no son los dos
+box plots resultantes del ejercicio.
 
 **Analogía:** (1) mira el precio de cada producto en el ticket; (2) mira “cómo de generoso es cada cliente de media”.
 
