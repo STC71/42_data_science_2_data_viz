@@ -273,74 +273,191 @@ anterior, los posibles *outliers* no se dibujan.
 
 ### 4.1 Media vs mediana (con paciencia)
 
-Ordena los precios de menor a mayor.
+Imagina que ordenas **todos los precios de compra** de menor a mayor, como ordenar a la gente por altura en una fila.
 
-- **Mediana** = valor del **medio** (o media de los dos centrales si hay cantidad par).  
-  **Analogía:** la persona del centro en una fila ordenada por altura. Un gigante al final **no** mueve al del centro.
-- **Media** = suma / n. Un gigante **sí** sube la media.
+#### Mediana (el del centro)
 
-Por eso en precios de tienda (muchos baratos + algunos carísimos) la **mediana** suele describir mejor “lo típico”.
+- Si hay un número **impar** de valores → la mediana es el valor que queda **exactamente en el medio**.
+- Si hay un número **par** → suele tomarse la **media de los dos valores centrales**.
 
-Como SQL no tiene una función simple llamada MEDIAN() en todos los sistemas, tenemos que usar una función especial de "percentiles" que hace exactamente lo que necesitamos: ordenar los precios y busca el valor del centro (el percentil 0.50). En la mayoría de bases de datos modernas (como PostgreSQL, Oracle o Redshift), se escribe así:
+**Analogía:** en una fila de 9 personas ordenadas por altura, la mediana es la persona número 5.  
+Si al final de la fila llega un gigante de 2,50 m, **la persona del centro no se mueve**. La mediana **no se deja arrastrar** por un valor extremo.
+
+#### Media (el promedio clásico)
+
+$$
+\text{media} = \frac{\text{suma de todos los precios}}{\text{cuántos precios hay}}
+$$
+
+**Analogía:** los mismos amigos de la sección 1.3 (2, 2, 2, 2 y 100 €). La media sube mucho por el 100.  
+En una tienda online pasa lo mismo: muchos productos baratos y unos pocos carísimos → la **media** se infla; la **mediana** sigue describiendo mejor “lo típico”.
+
+| Pregunta de negocio | Mejor resumen |
+|---------------------|---------------|
+| “¿Cuál es el precio **habitual**?” | **Mediana** |
+| “¿Cuánto dinero **en total** / por ticket de media?” | **Media** (y a veces también la suma) |
+
+#### Cómo se calcula la mediana en SQL (PostgreSQL)
+
+No existe un `MEDIAN()` universal y simple en todos los motores. En PostgreSQL se usa el **percentil 0,50** (el 50 % de los valores queda por debajo):
 
 ```sql
-SELECT 
-    PERCENTILE_CONT(0.50)                  -- Percentil 50: la mediana de los precios
-    WITHIN GROUP (ORDER BY price)          -- Ordena los precios antes de localizar el centro
-    AS precio_mediana                      -- Nombre del resultado calculado
-FROM tu_tabla_de_ventas                    -- Tabla que contiene las ventas
-WHERE estado_compra = 'purchase';          -- Conserva únicamente las compras
+SELECT
+    PERCENTILE_CONT(0.50)                  -- Percentil 50 = mediana
+    WITHIN GROUP (ORDER BY price)          -- Primero ordena los precios
+    AS precio_mediana
+FROM customers
+WHERE event_type = 'purchase';              -- Solo compras reales
 ```
+
+En el script Python del EX02 suele usarse algo equivalente con NumPy:
+
+```python
+np.percentile(array_de_precios, 50)   # mediana
+np.mean(array_de_precios)             # media
+```
+
+**Qué recordar en defensa:**  
+“La mediana es el centro de la lista ordenada; un outlier caro no la mueve como mueve a la media.”
+
+---
 
 ### 4.2 Cuartiles (Q1, Q2, Q3)
 
-Si ordenas todos los precios:
+Los **cuartiles** cortan la lista ordenada en **cuatro partes** con (aproximadamente) el mismo número de observaciones.
 
-| Nombre | Significado cotidiano |
-|--------|------------------------|
-| **Mínimo** | el más barato |
-| **Q1 (25 %)** | el 25 % más barato queda por debajo |
-| **Q2 (50 %)** | la mediana |
-| **Q3 (75 %)** | el 75 % queda por debajo |
-| **Máximo** | el más caro |
+| Nombre | Percentil | Significado cotidiano |
+|--------|-----------|------------------------|
+| **Mínimo** | — | el valor más pequeño |
+| **Q1** | 25 % | un cuarto de los datos son **menores o iguales** |
+| **Q2** | 50 % | la **mediana** |
+| **Q3** | 75 % | tres cuartos de los datos son **menores o iguales** |
+| **Máximo** | — | el valor más grande |
 
-**Analogía:** divides la fila ordenada en cuatro tramos iguales de personas; los cortes son los cuartiles.
+**Analogía paso a paso:**  
+Ordenas a 100 clientes por lo que gastaron.  
+- Q1 ≈ el gasto del cliente número 25.  
+- Q2 ≈ el del número 50 (mediana).  
+- Q3 ≈ el del número 75.  
 
-En Python suele usarse algo como `np.percentile(array, 25)` → Q1.
+Entre Q1 y Q3 está la **mitad central** de los datos (el 50 % “más típico”).  
+Eso es exactamente lo que dibuja la **caja** del box plot.
+
+#### Fórmulas / código
+
+En Python (como en `mustache.py`):
+
+```python
+q1 = np.percentile(arr, 25)
+q2 = np.percentile(arr, 50)   # mediana
+q3 = np.percentile(arr, 75)
+```
+
+En SQL (PostgreSQL), la idea es la misma con percentiles:
+
+```sql
+SELECT
+    PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY price) AS q1,
+    PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY price) AS mediana,
+    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY price) AS q3
+FROM customers
+WHERE event_type = 'purchase';
+```
+
+**Rango intercuartílico (IQR):**
+
+$$
+\text{IQR} = Q3 - Q1
+$$
+
+Mide **anchura de la caja**: si Q1 y Q3 están muy lejos, los precios “normales” están muy dispersos.
+
+**Qué recordar en defensa:**  
+“Q1–Q3 es la caja; dentro vive el 50 % central de los precios (o de las medias por cliente).”
+
+---
 
 ### 4.3 Desviación típica (std)
 
-Mide, a grosso modo, **cuánto se alejan** los valores de la media.  
-Si todos los precios son casi iguales → std pequeña. Si hay de 1 A a 300 A → std grande.
+La **desviación típica** (o *standard deviation*) resume, con un solo número, **cuánto se alejan** los valores de la **media**.
 
-No hace falta derivar la fórmula en defensa; sí decir: “dispersión respecto a la media”.
+- Si casi todos los precios son parecidos → std **pequeña**.  
+- Si hay de 0,40 ₳ a 300 ₳ → std **grande**.
+
+**Analogía:** dos clases con media de nota 7.  
+- En una, casi todos sacaron 6, 7 u 8 → poca dispersión.  
+- En la otra, hay muchos 3 y muchos 10 → misma media, **mucha** dispersión.
+
+No hace falta derivar la fórmula en la defensa. Sí conviene decir:
+
+> “La std mide la dispersión alrededor de la media; junto con media y cuartiles describe la forma de los precios.”
+
+En el EX02 el script imprime algo al estilo de `describe` de pandas:
+
+| Campo | Significado |
+|-------|-------------|
+| `count` | cuántos valores |
+| `mean` | media |
+| `std` | desviación típica |
+| `min` / `max` | extremos |
+| `25%` / `50%` / `75%` | Q1, mediana, Q3 |
+
+```python
+# Idea equivalente en NumPy
+np.std(arr)           # dispersión
+np.mean(arr)          # media
+np.percentile(arr, [25, 50, 75])
+```
+
+**Relación con el box plot:**  
+La std **no** se dibuja como una marca fija en el mustache del subject, pero **explica** por qué la caja es ancha o estrecha y por qué la media puede alejarse de la mediana.
+
+---
 
 ### 4.4 Box plot (“mustache”)
 
-Es un **resumen dibujado** de lo anterior:
+El box plot es un **dibujo resumen** de mínimo, Q1, mediana, Q3, máximo y (a veces) *outliers*.
 
 ```text
         |-----[====|====]-----|     •  •
       bigote  Q1  mediana Q3  bigote   outliers
 ```
 
-- **Caja:** de Q1 a Q3 (la “mitad central” de los datos).
-- **Raya en la caja:** mediana.
-- **Bigotes:** hasta valores aún “no extremos” (según la regla del programa).
-- **Puntos sueltos:** *outliers* (valores raros).
+| Parte del dibujo | Qué representa |
+|------------------|----------------|
+| **Caja** | de Q1 a Q3 (50 % central) |
+| **Raya dentro de la caja** | mediana (Q2) |
+| **Bigotes** | se alargan hasta valores aún “no extremos” (regla del programa / matplotlib) |
+| **Puntos sueltos** | *outliers* (valores raros), si el script los muestra |
 
-**Dos box plots del subject:**
+En este proyecto, los PNG principales del EX02 suelen ocultar outliers con `showfliers=False` (ver descripción de imágenes al inicio de esta sección 4). Eso **no borra** los outliers de los datos: solo deja el dibujo más limpio para la defensa.
 
-1. **Precios de ítem** → cada compra aporta su `price`.
-   PNG: [`box_plot_price.png`](./ex02/imgs/box_plot_price.png)
-2. **Cesta media por usuario** → primero, para cada cliente, `AVG(price)` de sus compras; luego el box sobre esas medias.
-   PNG: [`box_plot_average.png`](./ex02/imgs/box_plot_average.png)
+#### Los dos box plots del subject
 
-`mustache_python.png` es una captura explicativa del código y
-`mustache_diagrama_flujo.png` es un diagrama del proceso; no son los dos
-box plots resultantes del ejercicio.
+1. **Precios de ítem** (`box_plot_price.png`)  
+   - Unidad de dato: cada `price` de una fila `purchase`.  
+   - Pregunta: “¿cómo se distribuyen los precios de los productos comprados?”
 
-**Analogía:** (1) mira el precio de cada producto en el ticket; (2) mira “cómo de generoso es cada cliente de media”.
+2. **Cesta media por usuario** (`box_plot_average.png`)  
+   - Paso A: por cada `user_id`, `AVG(price)` de sus compras.  
+   - Paso B: box plot sobre **esas medias** (una por cliente).  
+   - Pregunta: “¿cómo de ‘generoso’ es, de media, cada cliente?”
+
+```sql
+-- Idea de la cesta media por usuario (luego el box se hace en Python)
+SELECT
+    user_id,
+    AVG(price) AS cesta_media
+FROM customers
+WHERE event_type = 'purchase'
+GROUP BY user_id;
+```
+
+**Analogía final:**  
+(1) miras el precio de **cada producto** en el ticket;  
+(2) miras, por cada persona, **cuánto suele costar de media** lo que compra.
+
+`mustache_python.png` y `mustache_diagrama_flujo.png` son material explicativo del código/proceso, **no** los dos box plots de entrega.
 
 [↑ Volver al índice](#indice)
 
@@ -348,32 +465,70 @@ box plots resultantes del ejercicio.
 
 ## 5. EX03 – Histogramas: frequency y monetary {#ex03}
 
-### 5.1 Frequency (frecuencia)
+Un **histograma** no ordena el tiempo (como EX01). Ordena **cuántos clientes** caen en cada **cajón (bin)** de una variable.
 
-1. Por cada `user_id`: cuántas compras tiene → un número entero (1, 2, 15, 40…).
-2. Se meten esos números en **cajones (bins)**, p. ej. en este proyecto:
+**Analogía global:** clasificas a los socios de un gimnasio por “veces al mes” o por “cuánto pagan al año” y levantas un **edificio** por cada rango. La altura del edificio = cuántas personas hay en ese rango.
 
-| Bin | Frecuencia de compra |
-|-----|----------------------|
-| 0–10 | 1 a 9 compras (según el corte del script) |
-| 10–20 | … |
-| 20–30 | … |
-| 30+ | 30 o más |
+### 5.1 Frequency (frecuencia de compra)
 
-3. Cada barra del gráfico = **cuántos clientes** cayeron en ese cajón.
+**Pregunta:** ¿cuántas veces ha comprado cada cliente, y cómo se reparte eso en la base?
 
-**Analogía:** clasificas a los socios del gimnasio por “veces que vinieron al mes” y levantas un edificio por cada rango.
+**Pasos (con paciencia):**
 
-### 5.2 Monetary (gasto)
+1. Filtra solo `purchase`.
+2. Por cada `user_id`, cuenta sus compras → un entero (1, 2, 15, 40…).
+3. Mete ese entero en un **bin** (cajón), por ejemplo en este proyecto:
 
-Igual, pero el número por cliente es **la suma de lo gastado** (`SUM(price)`), y los bins son rangos de dinero (0–50 A, 50–100 A, …).
+| Bin (etiqueta) | Frecuencia de compra (idea del script) |
+|----------------|------------------------------------------|
+| `0-10` | pocas compras (p. ej. 1…9, según cortes exactos del código) |
+| `10-20` | frecuencia media-baja |
+| `20-30` | frecuencia media-alta |
+| `30+` | clientes muy recurrentes (30 o más) |
 
-### Por qué se parecen a “edificios”
+4. Cada **barra** del gráfico = **número de clientes** en ese cajón (no el número de tickets).
 
-Barras altas a la **izquierda** = muchos clientes compran poco / gastan poco.  
-Cola a la **derecha** = pocos clientes muy activos o que gastan mucho.
+```sql
+-- Idea: compras por cliente (luego se agrupan en bins en Python)
+SELECT
+    user_id,
+    COUNT(*) AS n_compras
+FROM customers
+WHERE event_type = 'purchase'
+GROUP BY user_id;
+```
 
-Eso es **información de negocio**, no solo un dibujo bonito.
+**PNG típico:** el de “edificios” de frequency del EX03 (`building_frequency` / nombre equivalente en `ex03/`).
+
+**Qué suele verse:** barra **más alta a la izquierda** (muchos compran pocas veces) y **cola a la derecha** (pocos muy fieles).
+
+### 5.2 Monetary (gasto total por cliente)
+
+Misma lógica, otra variable:
+
+1. Por cada `user_id`: `SUM(price)` de sus `purchase` → gasto total.  
+2. Bins de dinero, p. ej. `0-50`, `50-100`, `100-150`, `150-200`, `200+` (₳).  
+3. Altura de la barra = cuántos clientes cayeron en ese rango de gasto.
+
+```sql
+SELECT
+    user_id,
+    SUM(price) AS gasto_total
+FROM customers
+WHERE event_type = 'purchase'
+GROUP BY user_id;
+```
+
+**Analogía:** frequency = “¿cuántas veces vino al bar?”; monetary = “¿cuánto se dejó en total?”.
+
+### Por qué se parecen a “edificios” (Highest Building)
+
+- Barras altas a la **izquierda** → la masa de la base es ocasional / gasta poco.  
+- Cola a la **derecha** → minoría intensiva o de alto valor.  
+
+Eso es **información de negocio** (quién merece campaña de activación vs quién es VIP), no solo un dibujo.
+
+**Puente al EX04:** frequency y monetary (junto con la recencia) son la materia prima del **RFM**.
 
 [↑ Volver al índice](#indice)
 
@@ -381,18 +536,38 @@ Eso es **información de negocio**, no solo un dibujo bonito.
 
 ## 6. RFM – Tres números por cliente {#rfm}
 
-Antes de agrupar clientes (EX04–EX05), se resume cada uno en pocas medidas. La idea clásica **RFM**:
+Antes de “agrupar clientes parecidos” (EX04–EX05), cada persona se resume en **tres medidas** clásicas. No hace falta memorizar la sigla: basta entender las tres preguntas.
 
-| Letra | Nombre | Idea en cristiano | Ejemplo de cálculo (purchase) |
-|-------|--------|-------------------|--------------------------------|
-| **R** | *Recency* | ¿Hace cuánto compró por última vez? | Días (o meses) desde el último `purchase` |
-| **F** | *Frequency* | ¿Cuántas veces ha comprado? | `COUNT(*)` de purchase por usuario |
-| **M** | *Monetary* | ¿Cuánto dinero ha dejado? | `SUM(price)` por usuario |
+| Letra | Nombre en inglés | Pregunta en cristiano | Ejemplo de cálculo (solo `purchase`) |
+|-------|------------------|------------------------|--------------------------------------|
+| **R** | *Recency* | ¿Hace **cuánto** compró por última vez? | Días (o distancia temporal) desde el último `purchase` |
+| **F** | *Frequency* | ¿**Cuántas veces** ha comprado? | `COUNT(*)` por `user_id` |
+| **M** | *Monetary* | ¿**Cuánto dinero** ha dejado? | `SUM(price)` por `user_id` |
 
-**Analogía:** de cada cliente del bar guardas: “¿cuándo vino la última vez?”, “¿cuántas veces al mes?” y “¿cuánto se gasta?”.
+**Analogía del bar de siempre:**  
+De cada cliente anotas: “¿cuándo vino la última vez?”, “¿cuántas veces al mes suele venir?” y “¿cuánto se gasta?”. Con solo eso ya puedes separar al que viene cada día y deja mucho del que no aparece desde hace meses.
 
-Con solo tres números puedes **comparar** clientes entre sí.  
-Eso alimenta el clustering.
+#### Esquema SQL (idea)
+
+```sql
+SELECT
+    user_id,
+    MAX(event_time) AS ultima_compra,   -- base de la recencia
+    COUNT(*)        AS frequency,       -- F
+    SUM(price)      AS monetary         -- M
+FROM customers
+WHERE event_type = 'purchase'
+GROUP BY user_id;
+```
+
+La **recencia** se convierte después en un número (p. ej. días hasta una fecha de referencia).  
+Con **tres columnas numéricas por cliente** ya se puede:
+
+1. dibujar histogramas (EX03),  
+2. escalar y agrupar con K-Means (EX04–EX05).
+
+**Qué recordar en defensa:**  
+“RFM no es magia: son tres resúmenes por cliente para poder compararlos en igualdad de condiciones.”
 
 [↑ Volver al índice](#indice)
 
@@ -402,47 +577,92 @@ Eso alimenta el clustering.
 
 ### 7.1 ¿Por qué escalar? (`StandardScaler`)
 
-R, F y M **no están en las mismas unidades**: días, conteos, euros.
+R, F y M **no hablan el mismo idioma**:
 
-**Analogía:** comparar alturas en metros con pesos en gramos sin convertir: el peso “gana” siempre porque los números son más gordos.
+| Variable | Unidades típicas | Orden de magnitud habitual |
+|----------|------------------|----------------------------|
+| Recency | días | decenas o cientos |
+| Frequency | conteos | unidades o decenas |
+| Monetary | dinero (₳) | puede ser cientos o miles |
 
-`StandardScaler` pone cada variable en una escala comparable (media 0, dispersión 1, a grandes rasgos). Así K-Means no se obsesiona solo con la variable de números más grandes.
+**Analogía:** comparar alturas en **metros** con pesos en **gramos**. Sin convertir, el peso “gana” siempre porque los números son más gordos, aunque no sea lo más importante.
 
-### 7.2 K-Means en una frase
+`StandardScaler` (scikit-learn) transforma cada columna para que, a grandes rasgos:
 
-1. Eliges **k** = cuántos grupos quieres.
-2. El algoritmo coloca **k centros** (centroides).
-3. Cada cliente se asigna al centro **más cercano**.
-4. Se recalculan los centros y se repite hasta estabilizarse.
+- la **media** quede cerca de 0,  
+- la **dispersión** quede cerca de 1.
 
-**Analogía:** en un mapa de puntos (clientes), pones k chinchetas y cada punto se queda con la chincheta más cercana; luego mueves las chinchetas al centro de “sus” puntos, y otra vez.
+Así K-Means no se obsesiona solo con la variable de números más grandes.
+
+**Qué recordar:** escalar **no inventa** clientes nuevos; solo pone las tres reglas del juego en la misma pista.
+
+---
+
+### 7.2 K-Means en una frase (y luego con paciencia)
+
+**Objetivo:** partir a los clientes en **k grupos** de forma que, dentro de cada grupo, se parezcan entre sí (en el espacio RFM escalado).
+
+**Pasos del algoritmo (idea):**
+
+1. Eliges **k** = cuántos grupos quieres (1, 2, 3, …).  
+2. Se colocan **k centros** (*centroides*), al inicio de forma más o menos aleatoria (con semilla reproducible en el proyecto).  
+3. Cada cliente se asigna al centro **más cercano** (distancia en el espacio escalado).  
+4. Cada centro se **mueve** al “centro de gravedad” de los clientes que le tocaron.  
+5. Se repite 3–4 hasta que las asignaciones casi no cambian.
+
+**Analogía de las chinchetas:**  
+En un mapa de puntos (clientes), clavas k chinchetas. Cada punto se queda con la chincheta más cercana. Luego mueves cada chincheta al centro de “sus” puntos, y vuelves a repartir. Al final, las chinchetas marcan los grupos.
+
+---
 
 ### 7.3 Inertia (WCSS)
 
-Para un **k** fijo, la *inertia* mide cuánto de “desparramados” están los puntos respecto a su centro:
+Para un **k** concreto, la *inertia* (a veces llamada WCSS: *Within-Cluster Sum of Squares*) mide cuánto de **desparramados** están los puntos respecto a **su** centro:
 
-- Si los grupos están **muy compactos** → inertia **baja**.
-- Si están **mezclados** → inertia **alta**.
+- Grupos **compactos** → inertia **baja**.  
+- Grupos **mezclados / alargados** → inertia **alta**.
 
-Al **subir k**, la inertia **siempre puede bajar** un poco (más chinchetas = cada punto puede estar más cerca de alguna).  
-Por eso no se elige el k con inertia mínima a lo loco (el mínimo extremo sería un grupo por cliente).
+**Importante:** si **subes k**, la inertia **casi siempre puede bajar** un poco (más chinchetas → cada punto puede estar más cerca de alguna).  
+El extremo absurdo sería **un grupo por cliente**: inertia casi 0, pero **sin ningún valor de negocio**.
 
-### 7.4 Método del codo (*Elbow*)
+Por eso **no** se elige el k con la inertia mínima a ciegas.
 
-Se dibuja:
+---
 
-- Eje X: \(k = 1, 2, 3, \ldots, 10\) (en este proyecto).
-- Eje Y: inertia de ese k.
+### 7.4 Método del codo (*Elbow Method*)
 
-La curva **baja fuerte** al principio y luego **se aplana**. La zona donde “deja de compensar” añadir grupos es el **codo**.
+Se construye una curva:
 
-**Analogía:** doblar el brazo: el codo es el cambio de dirección; más allá, el antebrazo sigue pero ya no es el pliegue principal.
+| Eje | Qué representa |
+|-----|----------------|
+| **X** | \(k = 1, 2, 3, \ldots, 10\) (en este proyecto) |
+| **Y** | inertia obtenida con ese k |
+
+Comportamiento típico:
+
+1. Al principio la curva **cae fuerte** (pasar de 1 a 2, de 2 a 3… aporta mucho).  
+2. Luego **se aplana**: añadir otro grupo ya no mejora tanto.
+
+La zona donde “deja de compensar” es el **codo**.
+
+**Analogía:** al doblar el brazo, el **codo** es el cambio de dirección; más allá el antebrazo sigue, pero el pliegue principal ya pasó.
+
+**PNG típico:** `elbow_method.png` en `ex04/`.
+
+---
 
 ### 7.5 Elegir k = 5 en este repo
 
-- El subject de EX05 pide **al menos 4** perfiles de negocio (nuevos, inactivos, loyal…).
-- El codo se interpreta en la zona ~3–5.
-- Este proyecto fija **`SELECTED_K = 5`** y debe **defenderse en voz alta** (no es un dogma del PDF).
+Hay que separar **tres capas** de decisión:
+
+| Capa | Qué dice |
+|------|----------|
+| **Subject EX05** | al menos **4** perfiles de negocio (p. ej. nuevos, inactivos, loyal…) |
+| **Curva del codo** | la caída fuerte suele estar hacia k ≈ 3–5; después se suaviza |
+| **Este proyecto** | `SELECTED_K = 5` (cinco segmentos: p. ej. new, inactive, silver, gold, platinum) |
+
+**k = 5 no es un dogma del PDF:** es una **elección defendible** (codo + necesidad de varios perfiles).  
+En defensa hay que **explicar** por qué no 2 (demasiado grueso) ni 9 (sobre-partir sin interpretación clara).
 
 [↑ Volver al índice](#indice)
 
@@ -450,20 +670,34 @@ La curva **baja fuerte** al principio y luego **se aplana**. La zona donde “de
 
 ## 8. EX05 – Mismos grupos, lectura de negocio {#ex05}
 
-### Matemáticamente
+### Matemáticamente (misma tubería que EX04)
 
-1. Mismo RFM (solo purchase).
-2. Mismo tipo de escalado.
-3. **Mismo k** que en EX04 (la hoja de evaluación lo exige).
-4. K-Means asigna a cada cliente un número de grupo 0…k−1.
-5. Vosotros **etiquetáis** esos grupos con lenguaje de negocio (new, inactive, silver, gold, platinum…).
+1. Mismo RFM (solo `purchase`).  
+2. Mismo tipo de escalado (`StandardScaler`).  
+3. **Mismo k** que en EX04 (la hoja de evaluación lo exige).  
+4. K-Means asigna a cada cliente un número de grupo \(0, 1, \ldots, k-1\).  
+5. **Vosotros** traducís esos números a etiquetas de negocio (`new`, `inactive`, `silver`, `gold`, `platinum`, …).
 
-### Gráficos
+Si el k de EX05 no coincide con el de EX04, la coherencia del módulo se rompe a ojos de la evaluación.
 
-- **Tamaño de cada grupo:** barras con cuántos clientes hay en cada etiqueta.
-- **Comportamiento:** puntos o resúmenes en un plano (p. ej. frecuencia vs gasto) para ver si los grupos se **separan** de verdad.
+### Qué muestran los gráficos
 
-**Analogía:** no basta decir “hay cinco cajones”; hay que decir **quién** hay en cada cajón y **para qué email** serviría (bienvenida, cupón de retorno, VIP…).
+| Tipo de gráfico | Pregunta que responde |
+|-----------------|------------------------|
+| **Barras de tamaño** (`customers_per_cluster`, etc.) | ¿Cuántos clientes hay en cada segmento? |
+| **Plano frequency vs monetary** (u otra proyección) | ¿Se **separan** de verdad los grupos en comportamiento? |
+
+**Analogía:** no basta decir “hay cinco cajones”. Hay que poder decir:
+
+- **quién** hay en cada cajón (recién llegado, dormido, VIP…),  
+- **para qué email o acción** serviría (bienvenida, cupón de retorno, trato premium…).
+
+### Qué pedir en defensa (checklist mental)
+
+- [ ] Mismo k que el codo / EX04  
+- [ ] Al menos dos gráficos  
+- [ ] Una frase de negocio por grupo (no solo “cluster 0, 1, 2”)  
+- [ ] Relación con RFM (por qué ese grupo tiene poca frecuencia o mucho gasto)
 
 [↑ Volver al índice](#indice)
 
@@ -479,10 +713,15 @@ La curva **baja fuerte** al principio y luego **se aplana**. La zona donde “de
 | **Cluster** | Grupo de clientes parecidos según el algoritmo. |
 | **Distribución** | Cómo se reparte un conjunto de valores (muchos bajos, pocos altos…). |
 | **Histograma** | Barras que cuentan cuántos caen en cada cajón. |
+| **Inertia (WCSS)** | Suma de “lejanías” de los puntos a su centro; baja = grupos compactos. |
+| **IQR** | \(Q3 - Q1\); anchura de la caja del box plot. |
+| **Mediana** | Valor central de la lista ordenada; resistente a outliers. |
 | **Outlier** | Valor raro, muy lejos del resto. |
+| **Percentil** | Umbral bajo el cual queda un % de los datos (p. ej. 50 % = mediana). |
 | **Proporción** | Parte / total (base del pie chart). |
 | **RFM** | Recency, Frequency, Monetary. |
 | **Scaler** | Transformación para que variables distintas sean comparables. |
+| **Std** | Desviación típica; dispersión alrededor de la media. |
 
 [↑ Volver al índice](#indice)
 
@@ -490,16 +729,14 @@ La curva **baja fuerte** al principio y luego **se aplana**. La zona donde “de
 
 ## 10. Cómo usarlo en la defensa {#defensa}
 
-No hace falta recitar fórmulas. Sí poder decir, con calma:
+No hace falta recitar fórmulas. Sí poder decir, con calma y mirando el PNG:
 
-1. **EX00:** “Cuento eventos por tipo y cada porción es conteo/total.”
-2. **EX01:** “Solo purchase; DISTINCT para personas; SUM para dinero; media = dinero/personas.”
-3. **EX02:** “Mediana no se vuelve loca con un precio extremo; la caja es Q1–Q3.”
-4. **EX03:** “Un número por cliente (veces o dinero), cajones, altura = cuántos clientes.”
-5. **EX04:** “Escalo RFM, pruebo varios k, miró dónde se aplana la inertia, elijo k y lo justifico.”
-6. **EX05:** “Mismo k; cada grupo es un tipo de cliente para el negocio.”
-
----
+1. **EX00:** “Cuento eventos por `event_type` y cada porción del pie es conteo / total.”  
+2. **EX01:** “Solo `purchase`; `DISTINCT` para personas; `SUM` para dinero; media diaria = dinero / personas.”  
+3. **EX02:** “Mediana = centro de la lista ordenada; la caja es Q1–Q3; un box es precios de ítem y el otro medias por cliente.”  
+4. **EX03:** “Un número por cliente (veces o dinero), cajones (bins), altura de la barra = cuántos clientes.”  
+5. **EX04:** “Escalo RFM para igualar unidades, pruebo varios k, miro dónde se aplana la inertia y elijo k justificándolo.”  
+6. **EX05:** “Mismo k que EX04; cada grupo es un tipo de cliente con lectura de negocio y al menos dos gráficos.”
 
 ### Relacionado en este repo
 
@@ -508,7 +745,9 @@ No hace falta recitar fórmulas. Sí poder decir, con calma:
 | `ex0N/python.md` | Cómo está escrito el código |
 | `ex0N/README.md` | Subject, defensa, checklist del ejercicio |
 | `evaluation.sh` | Guía de defensa (no es entregable del subject) |
+| `mates.md` | Este documento: las **cuentas** detrás de los gráficos |
 
 ---
 
-*mates.md · Module 2 Data Viz · material de apoyo · no sustituye en.subject.pdf*
+*mates.md · Module 2 Data Viz · material de apoyo · no sustituye en.subject.pdf*  
+*sternero – 42 Málaga*
