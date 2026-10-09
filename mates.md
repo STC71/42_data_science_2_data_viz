@@ -10,6 +10,9 @@ Sirve para **entender con calma** las cuentas que hay detrás de cada gráfico, 
 > **Analogía global:** la tabla `customers` es un cuaderno enorme de lo que hizo cada persona en la tienda online.  
 > Aquí no inventamos números: **contamos, promediamos, ordenamos y agrupamos** esos apuntes para que un jefe los entienda de un vistazo.
 
+> **Sobre las fórmulas:** cuando aparezca un símbolo (\(\bar{x}\), \(\sigma\), \(\sum\)…), justo debajo hay una tabla o un ejemplo numérico.  
+> No hace falta memorizar la notación: sirve para **ver de dónde sale** el número que luego dibuja el gráfico.
+
 ---
 
 ## 📑 Índice
@@ -56,6 +59,29 @@ $$
 **Analogía:** cinco amigos pagan 2, 2, 2, 2 y 100 €. La media es \((2+2+2+2+100)/5 = 21,6 €\).  
 La media **se deja arrastrar** por el 100 € (un valor raro).
 
+#### Fórmula “con letras” (sin miedo)
+
+Si tienes \(n\) números \(x_1, x_2, \ldots, x_n\) (por ejemplo, \(n\) precios):
+
+$$
+\bar{x} = \frac{1}{n}\sum_{i=1}^{n} x_i
+= \frac{x_1 + x_2 + \cdots + x_n}{n}
+$$
+
+| Símbolo | Significado cotidiano |
+|---------|------------------------|
+| \(x_i\) | el valor número \(i\) (un precio, un gasto…) |
+| \(n\) | cuántos valores hay |
+| \(\sum\) | “suma desde el primero hasta el último” |
+| \(\bar{x}\) | nombre habitual de la **media** (se lee “x barra”) |
+
+**Cómo se calcula a mano (ejemplo del módulo):**
+
+1. Suma: \(2+2+2+2+100 = 108\).
+2. Divide por la cantidad: \(108 / 5 = 21{,}6\).
+
+No hay truco oculto: **sumar y dividir por cuántos hay**.
+
 ### 1.4 Valores distintos (DISTINCT)
 
 A veces no queremos contar **filas**, sino **personas**.
@@ -80,6 +106,18 @@ Si hay 100 eventos y 50 son `view` → 50 %.
 
 [↑ Volver al índice](#indice)
 
+**De dónde sale la fórmula:**  
+“Parte entre total” es una **proporción** (número entre 0 y 1). Multiplicar por 100 solo la expresa en **porcentaje** (más cómodo de leer).
+
+Ejemplo con números del pie (orden de magnitud del warehouse):
+
+| Tipo | Conteo (ejemplo) | Proporción | Porcentaje |
+|------|------------------|------------|------------|
+| view | 9 654 310 | \(9654310 / 19175899 \approx 0{,}503\) | ≈ 50,3 % |
+| purchase | 1 286 088 | \(1286088 / 19175899 \approx 0{,}067\) | ≈ 6,7 % |
+
+[↑ Volver al índice](#indice)
+
 ---
 
 ## 2. EX00 – Porcentajes y el gráfico de tarta {#ex00}
@@ -93,6 +131,25 @@ Si hay 100 eventos y 50 son `view` → 50 %.
 1. Cuenta cuántos eventos hay de cada `event_type`.
 2. Suma todos esos conteos → total.
 3. Para cada tipo: \(\text{porción} = \text{conteo} / \text{total}\).
+
+En SQL la idea es:
+
+#### Fórmula del sector del pie
+
+Sea \(n_c\) el número de eventos de la categoría \(c\), y \(N = \sum_c n_c\) el total:
+
+$$
+p_c = \frac{n_c}{N}, \qquad
+\text{porcentaje}_c = 100 \cdot p_c, \qquad
+\text{ángulo del sector}_c = 360^\circ \cdot p_c
+$$
+
+- \(p_c\) es la **proporción** (parte del círculo).  
+- El ángulo en grados es la misma proporción del círculo completo (360°).  
+- Matplotlib (y cualquier librería) dibuja el sector con área proporcional a \(p_c\); no hace falta calcular el ángulo a mano, pero **entenderlo** aclara por qué “media tarta” ≈ 50 %.
+
+**Ejemplo minúsculo:** 3 view, 1 purchase → \(N=4\).  
+view → \(3/4 = 0{,}75\) → 75 % → \(0{,}75 \times 360^\circ = 270^\circ\).
 
 En SQL la idea es:
 
@@ -162,7 +219,7 @@ GROUP BY fecha_columna                           -- Agrupa todas las compras del
 ORDER BY fecha_columna;                          -- Muestra los días en orden cronológico
 ```
 
-**Analogía:** no cuentas tickets de caja, cuentas **caras distintas compraron** en la tienda ese día.
+**Analogía:** no cuentas tickets de caja, cuentas **personas distintas que compraron** en la tienda ese día.
 
 ### 3.2 Ventas por mes
 
@@ -199,6 +256,15 @@ Es el gráfico de área con el **gasto medio diario por cliente**.
 $$
 \text{gasto medio}(d) = \frac{\text{suma de price ese día}}{\text{clientes distintos ese día}}
 $$
+
+Con notación un poco más formal, si el día \(d\) tiene precios de compra \(x_1,\ldots,x_m\) repartidos entre \(u\) clientes distintos:
+
+$$
+\text{gasto medio}(d) = \frac{\sum_{i=1}^{m} x_i}{u}
+= \frac{\mathrm{SUM}(\texttt{price})\text{ del día }d}{\mathrm{COUNT}(\mathrm{DISTINCT}\ \texttt{user\_id})\text{ del día }d}
+$$
+
+**Ojo:** el denominador es **personas**, no filas. Si un cliente compra tres veces el mismo día, aporta tres precios al numerador pero **solo uno** al denominador.
 
 ```sql
 SELECT 
@@ -239,7 +305,7 @@ visualmente dentro de los box plots del apartado 4.4.
 
 #### `box_plot_price.png`: precio de los artículos comprados
 
-![Box plot de precios de artículos](./ex02/imgs/box_plot_price.png)
+**PNG correspondiente:** [`box_plot_price.png`](./ex02/imgs/box_plot_price.png)
 
 Cada valor representa el `price` de una línea `purchase`, es decir, el precio
 de un artículo comprado. La caja contiene el 50 % central de esos precios:
@@ -256,7 +322,7 @@ altos.
 
 #### `box_plot_average.png`: precio medio por usuario
 
-![Box plot del precio medio por usuario](./ex02/imgs/box_plot_average.png)
+**PNG correspondiente:** [`box_plot_average.png`](./ex02/imgs/box_plot_average.png)
 
 Aquí cada valor representa el precio medio de los artículos comprados por un
 usuario: primero se calcula `AVG(price)` agrupando por `user_id` y después se
@@ -279,6 +345,22 @@ Imagina que ordenas **todos los precios de compra** de menor a mayor, como orden
 
 - Si hay un número **impar** de valores → la mediana es el valor que queda **exactamente en el medio**.
 - Si hay un número **par** → suele tomarse la **media de los dos valores centrales**.
+
+Ordena los datos: \(x_{(1)} \le x_{(2)} \le \cdots \le x_{(n)}\) (el subíndice entre paréntesis significa “ya ordenados”).
+
+$$
+\mathrm{mediana} =
+\begin{cases}
+x_{\big(\frac{n+1}{2}\big)} & \text{si } n \text{ es impar} \\[6pt]
+\dfrac{x_{\big(\frac{n}{2}\big)} + x_{\big(\frac{n}{2}+1\big)}}{2} & \text{si } n \text{ es par}
+\end{cases}
+$$
+
+**Ejemplo impar (\(n=5\)):** precios \(1,\,2,\,3,\,4,\,100\).  
+Posición del centro: \((5+1)/2 = 3\) → mediana \(= 3\). La media sería \(22\).
+
+**Ejemplo par (\(n=4\)):** \(1,\,2,\,8,\,10\).  
+Centro entre las posiciones 2 y 3 → mediana \(= (2+8)/2 = 5\).
 
 **Analogía:** en una fila de 9 personas ordenadas por altura, la mediana es la persona número 5.  
 Si al final de la fila llega un gigante de 2,50 m, **la persona del centro no se mueve**. La mediana **no se deja arrastrar** por un valor extremo.
@@ -372,6 +454,11 @@ $$
 
 Mide **anchura de la caja**: si Q1 y Q3 están muy lejos, los precios “normales” están muy dispersos.
 
+**De dónde sale:** tras ordenar, Q1 es el valor bajo el cual queda ~25 % de los datos (percentil 25); Q3, ~75 %. Restar Q3 − Q1 mide solo la “franja central”, ignorando las colas extremas.
+
+**Ejemplo:** precios ordenados \(1, 2, 3, 4, 5, 6, 7, 8, 9\).  
+Aprox. Q1 ≈ 3, mediana ≈ 5, Q3 ≈ 7 → \(\mathrm{IQR} ≈ 4\). La caja iría de 3 a 7.
+
 **Qué recordar en defensa:**  
 “Q1–Q3 es la caja; dentro vive el 50 % central de los precios (o de las medias por cliente).”
 
@@ -388,7 +475,32 @@ La **desviación típica** (o *standard deviation*) resume, con un solo número,
 - En una, casi todos sacaron 6, 7 u 8 → poca dispersión.  
 - En la otra, hay muchos 3 y muchos 10 → misma media, **mucha** dispersión.
 
-No hace falta derivar la fórmula en la defensa. Sí conviene decir:
+#### Fórmula (población) y versión “muestra”
+
+Primero se calcula la media \(\bar{x}\). Luego, para cada valor, se mide **cuánto se aparta** de esa media \((x_i - \bar{x})\).  
+Esos apartados se **cuadran** (así no se cancelan positivos con negativos), se promedian y se hace la **raíz cuadrada** para volver a la unidad original (euros, ₳…):
+
+$$
+\sigma = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(x_i - \bar{x})^2}
+\quad\text{(población / a veces NumPy con }\texttt{ddof=0}\text{)}
+$$
+
+En estadística de **muestra** (estimar la dispersión de un conjunto mayor) suele usarse \(n-1\) en el denominador:
+
+$$
+s = \sqrt{\frac{1}{n-1}\sum_{i=1}^{n}(x_i - \bar{x})^2}
+\quad\text{(muestra / }\texttt{ddof=1}\text{)}
+$$
+
+**Por qué al cuadrado (la idea de la derivación):**  
+Si sumaras \((x_i - \bar{x})\) a pelo, lo que está por encima de la media y lo que está por debajo **se anularían** y obtendrías ~0 aunque hubiera mucha dispersión. Al cuadrar, todo aporta en positivo. La raíz final deshace el cambio de unidades (de “euros²” a “euros”).
+
+**Ejemplo mínimo:** valores \(2, 4, 6\). Media \(= 4\).  
+Apartados: \(-2,\, 0,\, +2\). Cuadrados: \(4,\, 0,\, 4\). Media de cuadrados \(= 8/3\).  
+\(\sigma = \sqrt{8/3} \approx 1{,}63\).
+
+En la defensa no hace falta calcularlo a mano; sí poder decir:  
+*“es la raíz de la media de las distancias al cuadrado respecto a la media”*.
 
 > “La std mide la dispersión alrededor de la media; junto con media y cuartiles describe la forma de los precios.”
 
@@ -547,6 +659,24 @@ Antes de “agrupar clientes parecidos” (EX04–EX05), cada persona se resume 
 **Analogía del bar de siempre:**  
 De cada cliente anotas: “¿cuándo vino la última vez?”, “¿cuántas veces al mes suele venir?” y “¿cuánto se gasta?”. Con solo eso ya puedes separar al que viene cada día y deja mucho del que no aparece desde hace meses.
 
+#### Fórmulas RFM (esquema)
+
+Fijada una fecha de referencia \(t_{\mathrm{ref}}\) (p. ej. el último día del dataset o “hoy”):
+
+$$
+\begin{aligned}
+R_u &= t_{\mathrm{ref}} - \max\{ t : \text{compra del usuario } u \text{ en } t \} \\
+F_u &= \#\{ \text{compras del usuario } u \} = \mathrm{COUNT}(*)_u \\
+M_u &= \sum \text{price de las compras de } u = \mathrm{SUM}(\texttt{price})_u
+\end{aligned}
+$$
+
+- \(R_u\) **grande** → lleva mucho tiempo sin comprar (más “frío”).  
+- \(F_u\) **grande** → compra a menudo.  
+- \(M_u\) **grande** → deja más dinero.
+
+En el código, a veces \(R\) se expresa en días enteros; lo importante es que **más recencia numérica** signifique lo mismo para todos los clientes.
+
 #### Esquema SQL (idea)
 
 ```sql
@@ -596,6 +726,30 @@ Así K-Means no se obsesiona solo con la variable de números más grandes.
 
 **Qué recordar:** escalar **no inventa** clientes nuevos; solo pone las tres reglas del juego en la misma pista.
 
+#### Fórmula del z-score (lo que hace, en esencia, StandardScaler)
+
+Para cada valor \(x\) de una columna (p. ej. monetary de un cliente):
+
+$$
+z = \frac{x - \mu}{\sigma}
+$$
+
+| Símbolo | Significado |
+|---------|-------------|
+| \(x\) | valor original (p. ej. 120 ₳ de gasto) |
+| \(\mu\) | media de **esa** columna en todos los clientes |
+| \(\sigma\) | desviación típica de esa columna |
+| \(z\) | valor **escalado** |
+
+- Si \(x = \mu\) → \(z = 0\) (cliente “en la media” de esa variable).  
+- Si \(x\) está una desviación por encima → \(z \approx +1\).  
+- Si está muy por debajo → \(z\) negativo.
+
+**Ejemplo:** frequency media 5, std 3. Un cliente con 11 compras → \(z = (11-5)/3 = 2\).  
+Otro con 2 compras → \(z = (2-5)/3 = -1\).
+
+Después del escalado, R, F y M viven en escalas comparables y la **distancia** entre clientes tiene sentido para K-Means.
+
 ---
 
 ### 7.2 K-Means en una frase (y luego con paciencia)
@@ -613,6 +767,18 @@ Así K-Means no se obsesiona solo con la variable de números más grandes.
 **Analogía de las chinchetas:**  
 En un mapa de puntos (clientes), clavas k chinchetas. Cada punto se queda con la chincheta más cercana. Luego mueves cada chincheta al centro de “sus” puntos, y vuelves a repartir. Al final, las chinchetas marcan los grupos.
 
+#### Distancia al centro (idea euclídea)
+
+En el espacio RFM escalado, un cliente es un punto \((z_R, z_F, z_M)\) y un centroide es \((c_R, c_F, c_M)\). La distancia “en línea recta” es:
+
+$$
+d = \sqrt{(z_R - c_R)^2 + (z_F - c_F)^2 + (z_M - c_M)^2}
+$$
+
+**Analogía:** en un mapa 2D (solo norte-sur y este-oeste) es el teorema de Pitágoras; aquí hay **tres** ejes (R, F, M), pero la idea es la misma: sumar cuadrados de diferencias y raíz.
+
+K-Means asigna cada cliente al centroide con **menor** \(d\).
+
 ---
 
 ### 7.3 Inertia (WCSS)
@@ -621,6 +787,21 @@ Para un **k** concreto, la *inertia* (a veces llamada WCSS: *Within-Cluster Sum 
 
 - Grupos **compactos** → inertia **baja**.  
 - Grupos **mezclados / alargados** → inertia **alta**.
+
+#### Fórmula
+
+Sea \(C_j\) el conjunto de clientes del grupo \(j\), y \(c_j\) su centroide. Para cada cliente \(x\) del grupo se mira la distancia al cuadrado a su centro y se **suma todo**:
+
+$$
+\mathrm{Inertia}(k) = \sum_{j=1}^{k}\ \sum_{x \in C_j}\ \| x - c_j \|^2
+$$
+
+\(\| x - c_j \|^2\) es justo el cuadrado de la distancia euclídea de la sección anterior (sin la raíz, porque al cuadrado ya basta para sumar errores).
+
+- **Un solo grupo (\(k=1\)):** un único centro (la media global) → inertia alta si los clientes son muy distintos.  
+- **Muchos grupos:** cada centro “abarca” menos puntos → la suma de errores **baja**.
+
+Por eso la curva del codo **decrece** al subir \(k\); el truco es encontrar dónde **deja de bajar de forma útil**.
 
 **Importante:** si **subes k**, la inertia **casi siempre puede bajar** un poco (más chinchetas → cada punto puede estar más cerca de alguna).  
 El extremo absurdo sería **un grupo por cliente**: inertia casi 0, pero **sin ningún valor de negocio**.
